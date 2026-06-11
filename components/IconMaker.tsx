@@ -200,10 +200,20 @@ export default function IconMaker() {
       ctx.fillText(f.emblem, cx, ey);
     }
 
-    const a = document.createElement("a");
-    a.download = "maru-icon.png";
-    a.href = oc.toDataURL("image/png");
-    a.click();
+    oc.toBlob(async (blob) => {
+      if (!blob) return;
+      const file = new File([blob], "maru-icon.png", { type: "image/png" });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: "まるアイコン" }).catch(() => {});
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.download = "maru-icon.png";
+        a.href = url;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    }, "image/png");
   };
 
   return (
