@@ -14,7 +14,7 @@ const BG_COLORS = [
 ];
 
 export default function IconMaker() {
-  const [selectedFrameId, setSelectedFrameId] = useState("mario-red");
+  const [selectedFrameId, setSelectedFrameId] = useState("hero-red");
   const [category, setCategory] = useState("all");
   const [bgColor, setBgColor] = useState("#ffffff");
   const [zoom, setZoom] = useState(100);
