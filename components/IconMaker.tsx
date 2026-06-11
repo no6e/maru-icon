@@ -203,7 +203,8 @@ export default function IconMaker() {
     oc.toBlob(async (blob) => {
       if (!blob) return;
       const file = new File([blob], "maru-icon.png", { type: "image/png" });
-      if (navigator.canShare?.({ files: [file] })) {
+      const isMobile = /iP(hone|ad|od)|Android/i.test(navigator.userAgent);
+      if (isMobile && navigator.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], title: "まるアイコン" }).catch(() => {});
       } else {
         const url = URL.createObjectURL(blob);
