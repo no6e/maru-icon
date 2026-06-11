@@ -332,14 +332,14 @@ export default function IconMaker() {
               />
               <span className="text-sm">🔍</span>
             </div>
-            <p className="text-center text-xs text-gray-400">写真をドラッグして位置を調整できます</p>
+            <p className="text-center text-xs text-gray-600">写真をドラッグして位置を調整できます</p>
             {/* 移動ボタン */}
             <div className="flex justify-center gap-2 mt-3">
               {[["↑", 0, -8], ["←", -8, 0], ["↓", 0, 8], ["→", 8, 0]].map(([label, dx, dy]) => (
                 <button
                   key={label as string}
                   onClick={() => { setOffsetX((x) => x + (dx as number)); setOffsetY((y) => y + (dy as number)); }}
-                  className="w-9 h-9 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-bold transition-colors"
+                  className="w-9 h-9 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-bold text-gray-700 transition-colors"
                 >
                   {label as string}
                 </button>
