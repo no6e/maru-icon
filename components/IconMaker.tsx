@@ -22,6 +22,10 @@ export default function IconMaker() {
   const [offsetY, setOffsetY] = useState(0);
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [showDragHint, setShowDragHint] = useState(false);
+  const dragHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [resetConfirm, setResetConfirm] = useState(false);
+  const resetConfirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dragStart = useRef({ x: 0, y: 0, ox: 0, oy: 0 });
   const previewRef = useRef<HTMLCanvasElement>(null);
   const offscreenRef = useRef<HTMLCanvasElement>(null);
@@ -125,6 +129,9 @@ export default function IconMaker() {
       img.onload = () => {
         photoRef.current = img;
         drawPreview();
+        if (dragHintTimer.current) clearTimeout(dragHintTimer.current);
+        setShowDragHint(true);
+        dragHintTimer.current = setTimeout(() => setShowDragHint(false), 2500);
       };
       img.src = src;
     };
@@ -134,6 +141,7 @@ export default function IconMaker() {
   // ドラッグ
   const onPointerDown = (e: React.PointerEvent) => {
     if (!imageSrc) return;
+    setShowDragHint(false);
     setIsDragging(true);
     dragStart.current = { x: e.clientX, y: e.clientY, ox: offsetX, oy: offsetY };
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
@@ -308,6 +316,11 @@ export default function IconMaker() {
           <p className="text-center font-bold text-sm py-3 border-b border-gray-100">プレビュー</p>
           <div className="flex justify-center items-center p-6 bg-gray-50">
             <div className="relative w-full max-w-[280px] aspect-square">
+              {showDragHint && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                  <span style={{ fontSize: "2.5rem", animation: "hint-drag 1.2s ease-in-out infinite" }}>👆</span>
+                </div>
+              )}
               <canvas
                 ref={previewRef}
                 className="w-full h-full rounded-full cursor-grab active:cursor-grabbing"
@@ -392,12 +405,41 @@ export default function IconMaker() {
               >
                 ⬇ 画像を保存する
               </button>
-              <button
-                onClick={() => { setImageSrc(null); photoRef.current = null; setZoom(100); setOffsetX(0); setOffsetY(0); }}
-                className="w-full py-2.5 text-xs font-bold border border-gray-200 rounded-xl hover:border-gray-400 text-gray-500 transition-colors"
-              >
-                ↺ もう一度つくる
-              </button>
+              {resetConfirm ? (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      photoRef.current = null;
+                      setImageSrc(null);
+                      setZoom(100); setOffsetX(0); setOffsetY(0);
+                      setResetConfirm(false);
+                      if (resetConfirmTimer.current) clearTimeout(resetConfirmTimer.current);
+                      drawPreview();
+                    }}
+                    className="flex-1 py-2.5 text-xs font-bold bg-red-500 hover:bg-red-600 text-white rounded-xl transition-colors"
+                  >
+                    リセットする
+                  </button>
+                  <button
+                    onClick={() => { setResetConfirm(false); if (resetConfirmTimer.current) clearTimeout(resetConfirmTimer.current); }}
+                    className="flex-1 py-2.5 text-xs font-bold border border-gray-200 rounded-xl hover:border-gray-400 text-gray-500 transition-colors"
+                  >
+                    キャンセル
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    if (!imageSrc) { setZoom(100); setOffsetX(0); setOffsetY(0); return; }
+                    setResetConfirm(true);
+                    if (resetConfirmTimer.current) clearTimeout(resetConfirmTimer.current);
+                    resetConfirmTimer.current = setTimeout(() => setResetConfirm(false), 3000);
+                  }}
+                  className="w-full py-2.5 text-xs font-bold border border-gray-200 rounded-xl hover:border-gray-400 text-gray-500 transition-colors"
+                >
+                  ↺ もう一度つくる
+                </button>
+              )}
               {!imageSrc && (
                 <p className="text-center text-xs text-gray-400">写真をアップロードすると保存できます</p>
               )}
