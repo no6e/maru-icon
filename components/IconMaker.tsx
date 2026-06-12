@@ -360,76 +360,107 @@ export default function IconMaker() {
   };
   const onPointerUp = () => setIsDragging(false);
 
-  const download = () => {
-    const SIZE = 512;
-    const oc = offscreenRef.current;
-    if (!oc) return;
-    oc.width = SIZE;
-    oc.height = SIZE;
-    const ctx = oc.getContext("2d");
-    if (!ctx) return;
-    const f = getFrame(selectedFrameId);
-    const cx = SIZE / 2, cy = SIZE / 2;
-    const ringW = SIZE * (ringPct / 100);
-    const innerR = SIZE / 2 - ringW - 2;
+  const renderIcon = (): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const SIZE = 512;
+      const oc = offscreenRef.current;
+      if (!oc) { reject(new Error("no canvas")); return; }
+      oc.width = SIZE;
+      oc.height = SIZE;
+      const ctx = oc.getContext("2d");
+      if (!ctx) { reject(new Error("no context")); return; }
+      const f = getFrame(selectedFrameId);
+      const cx = SIZE / 2, cy = SIZE / 2;
+      const ringW = SIZE * (ringPct / 100);
+      const innerR = SIZE / 2 - ringW - 2;
 
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
-    ctx.clip();
-    ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, SIZE, SIZE);
-    if (photoRef.current) {
-      const scale = zoom / 100;
-      const ratio = previewRef.current ? previewRef.current.width / SIZE : 1;
-      const imgW = innerR * 2 * scale;
-      const imgH = (photoRef.current.naturalHeight / photoRef.current.naturalWidth) * imgW;
-      const filterCss = FILTERS.find((fi) => fi.id === filterId)?.css ?? "";
-      ctx.filter = filterCss || "none";
-      ctx.drawImage(
-        photoRef.current,
-        cx - imgW / 2 + offsetX / ratio,
-        cy - imgH / 2 + offsetY / ratio,
-        imgW,
-        imgH
-      );
-      ctx.filter = "none";
-    }
-    ctx.restore();
-
-    const ringC1 = customRingColor ?? f.ring;
-    const ringC2 = customRingColor2 ?? undefined;
-    drawRing(ctx, f, SIZE, ringC1, ringC2, ringPct);
-
-    if (f.emblem) {
-      const er = SIZE * 0.1;
-      const ey = cy - (SIZE / 2 - ringW * 0.45);
+      ctx.save();
       ctx.beginPath();
-      ctx.arc(cx, ey, er, 0, Math.PI * 2);
-      ctx.fillStyle = f.emblemBg;
-      ctx.fill();
-      ctx.font = `bold ${er * 1.1}px sans-serif`;
-      ctx.fillStyle = "#fff";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(f.emblem, cx, ey);
-    }
+      ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, SIZE, SIZE);
+      if (photoRef.current) {
+        const scale = zoom / 100;
+        const ratio = previewRef.current ? previewRef.current.width / SIZE : 1;
+        const imgW = innerR * 2 * scale;
+        const imgH = (photoRef.current.naturalHeight / photoRef.current.naturalWidth) * imgW;
+        const filterCss = FILTERS.find((fi) => fi.id === filterId)?.css ?? "";
+        ctx.filter = filterCss || "none";
+        ctx.drawImage(
+          photoRef.current,
+          cx - imgW / 2 + offsetX / ratio,
+          cy - imgH / 2 + offsetY / ratio,
+          imgW,
+          imgH
+        );
+        ctx.filter = "none";
+      }
+      ctx.restore();
 
-    oc.toBlob(async (blob) => {
+      const ringC1 = customRingColor ?? f.ring;
+      const ringC2 = customRingColor2 ?? undefined;
+      drawRing(ctx, f, SIZE, ringC1, ringC2, ringPct);
+
+      if (f.emblem) {
+        const er = SIZE * 0.1;
+        const ey = cy - (SIZE / 2 - ringW * 0.45);
+        ctx.beginPath();
+        ctx.arc(cx, ey, er, 0, Math.PI * 2);
+        ctx.fillStyle = f.emblemBg;
+        ctx.fill();
+        ctx.font = `bold ${er * 1.1}px sans-serif`;
+        ctx.fillStyle = "#fff";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(f.emblem, cx, ey);
+      }
+
+      oc.toBlob((blob) => {
+        if (!blob) { reject(new Error("blob failed")); return; }
+        resolve(blob);
+      }, "image/png");
+    });
+  };
+
+  const download = async () => {
+    const blob = await renderIcon().catch(() => null);
+    if (!blob) return;
+    const file = new File([blob], "maru-icon.png", { type: "image/png" });
+    const isMobile = /iP(hone|ad|od)|Android/i.test(navigator.userAgent);
+    if (isMobile && navigator.canShare?.({ files: [file] })) {
+      await navigator.share({ files: [file], title: "まるアイコン" }).catch(() => {});
+    } else {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.download = "maru-icon.png";
+      a.href = url;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const shareToLine = async () => {
+    const isMobile = /iP(hone|ad|od)|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+      const blob = await renderIcon().catch(() => null);
       if (!blob) return;
       const file = new File([blob], "maru-icon.png", { type: "image/png" });
-      const isMobile = /iP(hone|ad|od)|Android/i.test(navigator.userAgent);
-      if (isMobile && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: "まるアイコン" }).catch(() => {});
-      } else {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.download = "maru-icon.png";
-        a.href = url;
-        a.click();
-        URL.revokeObjectURL(url);
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: "まるアイコン",
+          text: "プロフィール画像を作ったよ🎉",
+          url: "https://maru-icon.com",
+        }).catch(() => {});
+        return;
       }
-    }, "image/png");
+    }
+    window.open(
+      "https://social-plugins.line.me/lineit/share?url=" + encodeURIComponent("https://maru-icon.com"),
+      "_blank",
+      "noopener,noreferrer"
+    );
   };
 
   const selectFrame = (id: string) => {
@@ -711,6 +742,14 @@ export default function IconMaker() {
                 className="w-full py-3 bg-red-500 hover:bg-red-600 disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold text-sm rounded-xl transition-colors flex items-center justify-center gap-2"
               >
                 ⬇ 画像を保存する
+              </button>
+              <button
+                onClick={shareToLine}
+                disabled={!imageSrc}
+                className="w-full py-2.5 text-xs font-bold bg-[#06C755] hover:bg-[#05aa4a] disabled:bg-gray-200 disabled:text-gray-400 text-white rounded-xl transition-colors flex items-center justify-center gap-1.5"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.036 2 11.073c0 4.49 3.164 8.244 7.467 9.01.327.064.773.197.886.453.101.233.066.598.032.835l-.144.857c-.044.253-.202 1.01.887.55 1.089-.46 5.878-3.459 8.02-5.922C20.627 15.29 22 13.306 22 11.073 22 6.036 17.523 2 12 2z"/></svg>
+                LINE で共有
               </button>
               {resetConfirm ? (
                 <div className="flex gap-2">

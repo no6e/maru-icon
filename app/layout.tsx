@@ -16,12 +16,21 @@ export const metadata: Metadata = {
     siteName: "まるアイコン",
     locale: "ja_JP",
     type: "website",
+    images: [
+      {
+        url: "https://maru-icon.com/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "まるアイコン - プロフィール画像を丸く無料で作成",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "まるアイコン - プロフィール画像を丸く無料で作成",
     description:
       "写真をアップロードするだけでSNSアイコンが完成。無料・登録不要。",
+    images: ["https://maru-icon.com/og-image.png"],
   },
   alternates: {
     canonical: "https://maru-icon.com",
