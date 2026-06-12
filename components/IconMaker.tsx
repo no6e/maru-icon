@@ -958,7 +958,8 @@ export default function IconMaker() {
 
           {/* 背景色 */}
           <div className="px-5 pb-5 border-t border-gray-100 pt-3">
-            <p className="text-xs text-gray-400 mb-2">背景色</p>
+            <p className="text-xs text-gray-400 mb-1">背景色</p>
+            <p className="text-[10px] text-gray-300 mb-2">透過PNG（ロゴ・イラスト等）で有効</p>
             <div className="flex gap-2 flex-wrap">
               {BG_COLORS.map(({ color, label }) => (
                 <button
