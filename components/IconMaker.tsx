@@ -13,6 +13,54 @@ const BG_COLORS = [
   { color: "#fbbf24", label: "イエロー" },
 ];
 
+const RING_PRESETS = [
+  "#E4000F", "#f97316", "#fbbf24", "#34d399",
+  "#60a5fa", "#7c3aed", "#f472b6", "#1a1a1a",
+  "#ffffff", "#9ca3af",
+];
+
+function drawRing(
+  ctx: CanvasRenderingContext2D,
+  f: Frame,
+  size: number,
+  color1: string,
+  color2?: string
+) {
+  if (!color1) return;
+  const ringW = size * 0.085;
+  const cx = size / 2, cy = size / 2;
+  const r = size / 2 - ringW / 2 - 1;
+  ctx.lineWidth = ringW;
+  const c2 = color2 ?? f.ring2;
+
+  if (c2 && f.splitDir) {
+    if (f.splitDir === "tb") {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, Math.PI, 2 * Math.PI);
+      ctx.strokeStyle = color1;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI);
+      ctx.strokeStyle = c2;
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, Math.PI / 2, 3 * Math.PI / 2);
+      ctx.strokeStyle = color1;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, -Math.PI / 2, Math.PI / 2);
+      ctx.strokeStyle = c2;
+      ctx.stroke();
+    }
+  } else {
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = color1;
+    ctx.stroke();
+  }
+}
+
 export default function IconMaker() {
   const [selectedFrameId, setSelectedFrameId] = useState("hero-red");
   const [category, setCategory] = useState("all");
@@ -26,6 +74,8 @@ export default function IconMaker() {
   const dragHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [resetConfirm, setResetConfirm] = useState(false);
   const resetConfirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [customRingColor, setCustomRingColor] = useState<string | null>(null);
+  const [customRingColor2, setCustomRingColor2] = useState<string | null>(null);
   const dragStart = useRef({ x: 0, y: 0, ox: 0, oy: 0 });
   const previewRef = useRef<HTMLCanvasElement>(null);
   const offscreenRef = useRef<HTMLCanvasElement>(null);
@@ -35,7 +85,6 @@ export default function IconMaker() {
   const frame = getFrame(selectedFrameId);
   const filteredFrames = category === "all" ? FRAMES : FRAMES.filter((f) => f.category === category);
 
-  // Canvas描画
   const drawPreview = useCallback(() => {
     const canvas = previewRef.current;
     if (!canvas) return;
@@ -50,7 +99,6 @@ export default function IconMaker() {
     const ringW = size * 0.085;
     const innerR = size / 2 - ringW - 2;
 
-    // 背景 + クリップ
     ctx.save();
     ctx.beginPath();
     ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
@@ -71,14 +119,10 @@ export default function IconMaker() {
     }
     ctx.restore();
 
-    // リング
-    ctx.beginPath();
-    ctx.arc(cx, cy, size / 2 - ringW / 2 - 1, 0, Math.PI * 2);
-    ctx.strokeStyle = f.ring;
-    ctx.lineWidth = ringW;
-    ctx.stroke();
+    const ringC1 = customRingColor ?? f.ring;
+    const ringC2 = customRingColor2 ?? undefined;
+    drawRing(ctx, f, size, ringC1, ringC2);
 
-    // エンブレム
     if (f.emblem) {
       const er = size * 0.1;
       const ey = cy - (size / 2 - ringW * 0.45);
@@ -92,13 +136,12 @@ export default function IconMaker() {
       ctx.textBaseline = "middle";
       ctx.fillText(f.emblem, cx, ey);
     }
-  }, [selectedFrameId, bgColor, zoom, offsetX, offsetY]);
+  }, [selectedFrameId, bgColor, zoom, offsetX, offsetY, customRingColor, customRingColor2]);
 
   useEffect(() => {
     drawPreview();
   }, [drawPreview]);
 
-  // キャンバスサイズ
   useEffect(() => {
     const canvas = previewRef.current;
     if (!canvas) return;
@@ -116,7 +159,6 @@ export default function IconMaker() {
     return () => ro.disconnect();
   }, [drawPreview]);
 
-  // ファイル読み込み
   const loadFile = (file: File) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -138,7 +180,6 @@ export default function IconMaker() {
     reader.readAsDataURL(file);
   };
 
-  // ドラッグ
   const onPointerDown = (e: React.PointerEvent) => {
     if (!imageSrc) return;
     setShowDragHint(false);
@@ -153,7 +194,6 @@ export default function IconMaker() {
   };
   const onPointerUp = () => setIsDragging(false);
 
-  // ダウンロード
   const download = () => {
     const SIZE = 512;
     const oc = offscreenRef.current;
@@ -188,11 +228,9 @@ export default function IconMaker() {
     }
     ctx.restore();
 
-    ctx.beginPath();
-    ctx.arc(cx, cy, SIZE / 2 - ringW / 2 - 1, 0, Math.PI * 2);
-    ctx.strokeStyle = f.ring;
-    ctx.lineWidth = ringW;
-    ctx.stroke();
+    const ringC1 = customRingColor ?? f.ring;
+    const ringC2 = customRingColor2 ?? undefined;
+    drawRing(ctx, f, SIZE, ringC1, ringC2);
 
     if (f.emblem) {
       const er = SIZE * 0.1;
@@ -224,6 +262,15 @@ export default function IconMaker() {
       }
     }, "image/png");
   };
+
+  const selectFrame = (id: string) => {
+    setSelectedFrameId(id);
+    setCustomRingColor(null);
+    setCustomRingColor2(null);
+  };
+
+  const ringC1 = customRingColor ?? frame.ring;
+  const ringC2 = customRingColor2 ?? frame.ring2;
 
   return (
     <div className="max-w-5xl mx-auto px-3 py-4 md:py-8">
@@ -278,8 +325,8 @@ export default function IconMaker() {
             </div>
             <div className="px-4 pb-4">
               {/* 現在選択中 */}
-              <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-xl mb-3">
-                <FrameThumb frame={frame} size={36} />
+              <div className="flex items-center gap-2 p-2 bg-red-50 rounded-xl mb-3">
+                <FrameThumb frame={frame} size={36} color1={ringC1} color2={ringC2} />
                 <span className="text-sm font-bold flex-1">{frame.name}</span>
               </div>
               {/* カテゴリタブ */}
@@ -295,18 +342,68 @@ export default function IconMaker() {
                 ))}
               </div>
               {/* フレームグリッド */}
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-4 gap-1.5">
                 {filteredFrames.map((f) => (
                   <button
                     key={f.id}
-                    onClick={() => setSelectedFrameId(f.id)}
-                    className={`p-2 rounded-xl text-center transition-all border-2 ${f.id === selectedFrameId ? "border-red-500 bg-red-50" : "border-transparent bg-gray-50 hover:border-red-200"}`}
+                    onClick={() => selectFrame(f.id)}
+                    className={`p-1.5 rounded-xl text-center transition-all border-2 ${f.id === selectedFrameId ? "border-red-500 bg-red-50" : "border-transparent bg-gray-50 hover:border-red-200"}`}
                   >
-                    <FrameThumb frame={f} size={48} />
-                    <p className="text-[10px] font-semibold text-gray-700 mt-1 leading-tight">{f.name}</p>
+                    <FrameThumb frame={f} size={40} />
+                    <p className="text-[9px] font-semibold text-gray-700 mt-1 leading-tight">{f.name}</p>
                   </button>
                 ))}
               </div>
+
+              {/* カラーカスタマイズ */}
+              {frame.id !== "none" && (
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <p className="text-xs font-semibold text-gray-500 mb-2">
+                    {frame.splitDir ? "カラーA（左 / 上）" : "フレームカラー"}
+                  </p>
+                  <div className="flex gap-1.5 flex-wrap items-center">
+                    {RING_PRESETS.map((c) => (
+                      <button
+                        key={c}
+                        onClick={() => setCustomRingColor(c)}
+                        className={`w-6 h-6 rounded-full border-2 transition-all flex-shrink-0 ${ringC1 === c ? "border-red-500 scale-110" : "border-gray-200"}`}
+                        style={{ background: c }}
+                        title={c}
+                      />
+                    ))}
+                    <input
+                      type="color"
+                      value={ringC1 || "#E4000F"}
+                      onChange={(e) => setCustomRingColor(e.target.value)}
+                      className="w-6 h-6 rounded-full cursor-pointer border border-gray-200 p-0"
+                      title="カスタムカラー"
+                    />
+                  </div>
+                  {frame.splitDir && (
+                    <>
+                      <p className="text-xs font-semibold text-gray-500 mt-3 mb-2">カラーB（右 / 下）</p>
+                      <div className="flex gap-1.5 flex-wrap items-center">
+                        {RING_PRESETS.map((c) => (
+                          <button
+                            key={c}
+                            onClick={() => setCustomRingColor2(c)}
+                            className={`w-6 h-6 rounded-full border-2 transition-all flex-shrink-0 ${ringC2 === c ? "border-red-500 scale-110" : "border-gray-200"}`}
+                            style={{ background: c }}
+                            title={c}
+                          />
+                        ))}
+                        <input
+                          type="color"
+                          value={ringC2 || "#1a1a1a"}
+                          onChange={(e) => setCustomRingColor2(e.target.value)}
+                          className="w-6 h-6 rounded-full cursor-pointer border border-gray-200 p-0"
+                          title="カスタムカラー"
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -346,7 +443,6 @@ export default function IconMaker() {
               <span className="text-sm">🔍</span>
             </div>
             <p className="text-center text-xs text-gray-600">写真をドラッグして位置を調整できます</p>
-            {/* 移動ボタン */}
             <div className="flex justify-center gap-2 mt-3">
               {[["↑", 0, -8], ["←", -8, 0], ["↓", 0, 8], ["→", 8, 0]].map(([label, dx, dy]) => (
                 <button
@@ -447,7 +543,7 @@ export default function IconMaker() {
           </div>
 
           {/* SNS用途説明 */}
-          <div className="bg-white rounded-2xl shadow-sm p-4">
+          <div className="bg-white rounded-2xl shadow p-4">
             <p className="text-xs font-bold text-gray-600 mb-2">💡 こんな用途に</p>
             <ul className="text-xs text-gray-500 space-y-1">
               <li>✓ LINE プロフィール画像</li>
@@ -466,8 +562,12 @@ export default function IconMaker() {
   );
 }
 
-// フレームサムネイルコンポーネント
-function FrameThumb({ frame, size }: { frame: Frame; size: number }) {
+function FrameThumb({ frame, size, color1, color2 }: {
+  frame: Frame;
+  size: number;
+  color1?: string;
+  color2?: string;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -479,11 +579,50 @@ function FrameThumb({ frame, size }: { frame: Frame; size: number }) {
     if (!ctx) return;
     const cx = size / 2, cy = size / 2, r = size / 2 - 2;
     ctx.clearRect(0, 0, size, size);
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.strokeStyle = frame.ring;
-    ctx.lineWidth = size * 0.15;
-    ctx.stroke();
+
+    if (!frame.ring && !color1) {
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.strokeStyle = "#d1d5db";
+      ctx.lineWidth = size * 0.15;
+      ctx.stroke();
+      ctx.setLineDash([]);
+      return;
+    }
+
+    const c1 = color1 ?? frame.ring;
+    const c2 = color2 ?? frame.ring2;
+    const lw = size * 0.15;
+    ctx.lineWidth = lw;
+
+    if (c2 && frame.splitDir) {
+      if (frame.splitDir === "tb") {
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, Math.PI, 2 * Math.PI);
+        ctx.strokeStyle = c1;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI);
+        ctx.strokeStyle = c2;
+        ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, Math.PI / 2, 3 * Math.PI / 2);
+        ctx.strokeStyle = c1;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, -Math.PI / 2, Math.PI / 2);
+        ctx.strokeStyle = c2;
+        ctx.stroke();
+      }
+    } else {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.strokeStyle = c1;
+      ctx.stroke();
+    }
+
     if (frame.emblem) {
       ctx.font = `bold ${size * 0.3}px sans-serif`;
       ctx.fillStyle = frame.ring;
@@ -491,7 +630,7 @@ function FrameThumb({ frame, size }: { frame: Frame; size: number }) {
       ctx.textBaseline = "middle";
       ctx.fillText(frame.emblem, cx, cy);
     }
-  }, [frame, size]);
+  }, [frame, size, color1, color2]);
 
   return <canvas ref={canvasRef} width={size} height={size} className="rounded-full mx-auto" style={{ width: size, height: size }} />;
 }
