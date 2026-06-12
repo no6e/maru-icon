@@ -233,7 +233,7 @@ export default function IconMaker() {
         <div className="flex flex-col gap-4">
 
           {/* Step1: アップロード */}
-          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <div className="bg-white rounded-2xl shadow overflow-hidden">
             <div className="flex items-center gap-2 px-4 pt-4 pb-2">
               <span className="w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">1</span>
               <span className="font-bold text-sm">写真をアップロード</span>
@@ -271,9 +271,9 @@ export default function IconMaker() {
           </div>
 
           {/* Step2: フレーム */}
-          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <div className="bg-white rounded-2xl shadow overflow-hidden">
             <div className="flex items-center gap-2 px-4 pt-4 pb-2">
-              <span className="w-6 h-6 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">2</span>
+              <span className="w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">2</span>
               <span className="font-bold text-sm">フレームを選ぶ</span>
             </div>
             <div className="px-4 pb-4">
@@ -312,9 +312,9 @@ export default function IconMaker() {
         </div>
 
         {/* 中央: プレビュー */}
-        <div className="bg-white rounded-2xl shadow-sm">
+        <div className="bg-white rounded-2xl shadow">
           <p className="text-center font-bold text-sm py-3 border-b border-gray-100">プレビュー</p>
-          <div className="flex justify-center items-center p-6 bg-gray-50">
+          <div className="flex justify-center items-center p-6 bg-red-50">
             <div className="relative w-full max-w-[280px] aspect-square">
               {showDragHint && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
@@ -379,9 +379,9 @@ export default function IconMaker() {
         {/* 右カラム */}
         <div className="flex flex-col gap-4">
           {/* Step3 */}
-          <div className="bg-white rounded-2xl shadow-sm">
+          <div className="bg-white rounded-2xl shadow">
             <div className="flex items-center gap-2 px-4 pt-4 pb-3">
-              <span className="w-6 h-6 rounded-full bg-green-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">3</span>
+              <span className="w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">3</span>
               <span className="font-bold text-sm">プレビューを確認</span>
             </div>
             <div className="px-4 pb-4 grid grid-cols-2 gap-2">
@@ -392,9 +392,9 @@ export default function IconMaker() {
           </div>
 
           {/* Step4: ダウンロード */}
-          <div className="bg-white rounded-2xl shadow-sm">
+          <div className="bg-white rounded-2xl shadow">
             <div className="flex items-center gap-2 px-4 pt-4 pb-3">
-              <span className="w-6 h-6 rounded-full bg-amber-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">4</span>
+              <span className="w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">4</span>
               <span className="font-bold text-sm">ダウンロード</span>
             </div>
             <div className="px-4 pb-4 flex flex-col gap-2">

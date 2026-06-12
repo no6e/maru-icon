@@ -34,7 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         gtag('js', new Date());
         gtag('config', 'G-WS13N4WMN9');
       `}</Script>
-      <body className="bg-gray-100 min-h-screen">
+      <body className="bg-gray-50 min-h-screen">
         <header className="bg-white border-b-2 border-red-500 sticky top-0 z-50 shadow-sm">
           <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
             <a href="/" className="flex items-center gap-2">

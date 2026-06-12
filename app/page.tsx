@@ -36,7 +36,7 @@ export default function Home() {
             { icon: "🔒", title: "登録不要・無料", desc: "アカウント登録なし、メールアドレス不要。すぐに作成してダウンロードできます。" },
             { icon: "🎨", title: "フレームでデコ", desc: "ゲームキャラ・シンプル・季節・かわいい系など20種類以上のフレームから選べます。" },
           ].map(({ icon, title, desc }) => (
-            <div key={title} className="bg-white rounded-2xl p-5 shadow-sm">
+            <div key={title} className="bg-white rounded-2xl p-5 shadow">
               <div className="text-2xl mb-2">{icon}</div>
               <h2 className="font-bold text-sm mb-1">{title}</h2>
               <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>
@@ -44,7 +44,7 @@ export default function Home() {
           ))}
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
+        <div className="bg-white rounded-2xl p-6 shadow">
           <h2 className="font-bold text-base mb-3">プロフィール画像を丸く作る方法</h2>
           <ol className="text-sm text-gray-600 space-y-2">
             <li><span className="font-bold text-red-500">①</span> 「写真を選ぶ」から画像をアップロード（JPG・PNG・WEBP対応）</li>
