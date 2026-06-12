@@ -35,6 +35,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://maru-icon.com",
   },
+  other: {
+    "google-adsense-account": "ca-pub-4661946188646786",
+  },
 };
 
 export default function RootLayout({
