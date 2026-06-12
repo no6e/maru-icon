@@ -926,19 +926,12 @@ export default function IconMaker() {
                 className="flex-1 accent-red-500"
               />
               <span className="text-sm">🔍</span>
+              <button
+                onClick={() => { setOffsetX(0); setOffsetY(0); setZoom(100); }}
+                className="flex-shrink-0 px-2 py-1 text-xs font-bold border border-gray-200 rounded-lg hover:border-red-400 text-gray-500 transition-colors"
+              >↺</button>
             </div>
-            <p className="text-center text-xs text-gray-600">写真をドラッグして位置を調整できます</p>
-            <div className="flex justify-center gap-2 mt-3">
-              {[["↑", 0, -8], ["←", -8, 0], ["↓", 0, 8], ["→", 8, 0]].map(([label, dx, dy]) => (
-                <button
-                  key={label as string}
-                  onClick={() => { setOffsetX((x) => x + (dx as number)); setOffsetY((y) => y + (dy as number)); }}
-                  className="w-9 h-9 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-bold text-gray-700 transition-colors"
-                >
-                  {label as string}
-                </button>
-              ))}
-            </div>
+            <p className="text-center text-xs text-gray-400">ドラッグで位置調整</p>
           </div>
           {/* フィルター */}
           <div className="px-5 pb-3 border-t border-gray-100 pt-3">
@@ -982,23 +975,10 @@ export default function IconMaker() {
 
         {/* 右カラム */}
         <div className="flex flex-col gap-4">
-          {/* Step3 */}
+          {/* Step3: ダウンロード */}
           <div className="bg-white rounded-2xl shadow">
             <div className="flex items-center gap-2 px-4 pt-4 pb-3">
               <span className="w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">3</span>
-              <span className="font-bold text-sm">プレビューを確認</span>
-            </div>
-            <div className="px-4 pb-4 grid grid-cols-2 gap-2">
-              <button onClick={() => setZoom((z) => Math.min(200, z + 10))} className="py-2 text-xs font-bold border border-gray-200 rounded-xl hover:border-red-400 transition-colors">🔍 拡大</button>
-              <button onClick={() => setZoom((z) => Math.max(50, z - 10))} className="py-2 text-xs font-bold border border-gray-200 rounded-xl hover:border-red-400 transition-colors">🔎 縮小</button>
-              <button onClick={() => { setOffsetX(0); setOffsetY(0); setZoom(100); }} className="col-span-2 py-2 text-xs font-bold border border-gray-200 rounded-xl hover:border-red-400 transition-colors">↺ リセット</button>
-            </div>
-          </div>
-
-          {/* Step4: ダウンロード */}
-          <div className="bg-white rounded-2xl shadow">
-            <div className="flex items-center gap-2 px-4 pt-4 pb-3">
-              <span className="w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">4</span>
               <span className="font-bold text-sm">ダウンロード</span>
             </div>
             <div className="px-4 pb-4 flex flex-col gap-2">
