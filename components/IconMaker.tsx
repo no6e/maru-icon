@@ -556,8 +556,8 @@ export default function IconMaker() {
     drawRing(ctx, f, size, ringC1, ringC2, ringPct);
 
     if (f.emblem) {
-      const er = size * 0.1;
-      const ey = cy - (size / 2 - ringW * 0.45);
+      const er = Math.min(size * 0.1, ringW * 0.44);
+      const ey = cy - (size / 2 - ringW * 0.5);
       ctx.beginPath();
       ctx.arc(cx, ey, er, 0, Math.PI * 2);
       ctx.fillStyle = f.emblemBg;
@@ -669,8 +669,8 @@ export default function IconMaker() {
       drawRing(ctx, f, SIZE, ringC1, ringC2, ringPct);
 
       if (f.emblem) {
-        const er = SIZE * 0.1;
-        const ey = cy - (SIZE / 2 - ringW * 0.45);
+        const er = Math.min(SIZE * 0.1, ringW * 0.44);
+        const ey = cy - (SIZE / 2 - ringW * 0.5);
         ctx.beginPath();
         ctx.arc(cx, ey, er, 0, Math.PI * 2);
         ctx.fillStyle = f.emblemBg;
