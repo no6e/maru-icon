@@ -24,10 +24,11 @@ function drawRing(
   f: Frame,
   size: number,
   color1: string,
-  color2?: string
+  color2?: string,
+  ringPct = 8.5
 ) {
   if (!color1) return;
-  const ringW = size * 0.085;
+  const ringW = size * (ringPct / 100);
   const cx = size / 2, cy = size / 2;
   const r = size / 2 - ringW / 2 - 1;
   ctx.lineWidth = ringW;
@@ -76,6 +77,7 @@ export default function IconMaker() {
   const resetConfirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [customRingColor, setCustomRingColor] = useState<string | null>(null);
   const [customRingColor2, setCustomRingColor2] = useState<string | null>(null);
+  const [ringPct, setRingPct] = useState(8.5);
   const dragStart = useRef({ x: 0, y: 0, ox: 0, oy: 0 });
   const previewRef = useRef<HTMLCanvasElement>(null);
   const offscreenRef = useRef<HTMLCanvasElement>(null);
@@ -96,7 +98,7 @@ export default function IconMaker() {
     const f = getFrame(selectedFrameId);
     const cx = size / 2;
     const cy = size / 2;
-    const ringW = size * 0.085;
+    const ringW = size * (ringPct / 100);
     const innerR = size / 2 - ringW - 2;
 
     ctx.save();
@@ -121,7 +123,7 @@ export default function IconMaker() {
 
     const ringC1 = customRingColor ?? f.ring;
     const ringC2 = customRingColor2 ?? undefined;
-    drawRing(ctx, f, size, ringC1, ringC2);
+    drawRing(ctx, f, size, ringC1, ringC2, ringPct);
 
     if (f.emblem) {
       const er = size * 0.1;
@@ -136,7 +138,7 @@ export default function IconMaker() {
       ctx.textBaseline = "middle";
       ctx.fillText(f.emblem, cx, ey);
     }
-  }, [selectedFrameId, bgColor, zoom, offsetX, offsetY, customRingColor, customRingColor2]);
+  }, [selectedFrameId, bgColor, zoom, offsetX, offsetY, customRingColor, customRingColor2, ringPct]);
 
   useEffect(() => {
     drawPreview();
@@ -204,7 +206,7 @@ export default function IconMaker() {
     if (!ctx) return;
     const f = getFrame(selectedFrameId);
     const cx = SIZE / 2, cy = SIZE / 2;
-    const ringW = SIZE * 0.085;
+    const ringW = SIZE * (ringPct / 100);
     const innerR = SIZE / 2 - ringW - 2;
 
     ctx.save();
@@ -230,7 +232,7 @@ export default function IconMaker() {
 
     const ringC1 = customRingColor ?? f.ring;
     const ringC2 = customRingColor2 ?? undefined;
-    drawRing(ctx, f, SIZE, ringC1, ringC2);
+    drawRing(ctx, f, SIZE, ringC1, ringC2, ringPct);
 
     if (f.emblem) {
       const er = SIZE * 0.1;
@@ -354,6 +356,25 @@ export default function IconMaker() {
                   </button>
                 ))}
               </div>
+
+              {/* 太さ */}
+              {frame.id !== "none" && (
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs font-semibold text-gray-500">フレームの太さ</p>
+                    <span className="text-xs text-gray-400">{Math.round(ringPct)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={2}
+                    max={20}
+                    step={0.5}
+                    value={ringPct}
+                    onChange={(e) => setRingPct(Number(e.target.value))}
+                    className="w-full accent-red-500"
+                  />
+                </div>
+              )}
 
               {/* カラーカスタマイズ */}
               {frame.id !== "none" && (
