@@ -38,19 +38,93 @@ function createPatternCanvas(name: string): HTMLCanvasElement | null {
 
   switch (name) {
     case "wood": {
-      c.width = 4; c.height = 28;
-      const grains = [
-        [0, 3, "#A0522D"], [3, 1, "#5C2E0A"], [4, 4, "#9B5523"],
-        [8, 1, "#4A2008"], [9, 3, "#B06030"], [12, 2, "#7B3B10"],
-        [14, 1, "#C8783A"], [15, 3, "#8B4513"], [18, 1, "#3E1A06"],
-        [19, 5, "#A05028"], [24, 1, "#6B3010"], [25, 3, "#955520"],
-      ] as [number, number, string][];
-      grains.forEach(([y, h, color]) => {
-        ctx.fillStyle = color;
-        ctx.fillRect(0, y, 4, h);
-      });
-      ctx.fillStyle = "rgba(255,200,120,0.08)";
-      ctx.fillRect(2, 0, 1, 28);
+      const TW = 200, TH = 60;
+      c.width = TW; c.height = TH;
+
+      let prng = 0xF1D2C3B4;
+      const rng = () => {
+        prng ^= prng << 13; prng ^= prng >>> 17; prng ^= prng << 5;
+        return (prng >>> 0) / 0x100000000;
+      };
+
+      // Smooth value noise (bilinear interpolated random grid)
+      const makeNoise = (scale: number, amp: number, ox = 0, oy = 0): Float32Array => {
+        const GW = Math.ceil(TW / scale) + 2;
+        const GH = Math.ceil(TH / scale) + 2;
+        const g = new Float32Array(GW * GH);
+        for (let i = 0; i < g.length; i++) g[i] = rng();
+        const out = new Float32Array(TW * TH);
+        for (let y = 0; y < TH; y++) {
+          for (let x = 0; x < TW; x++) {
+            const sx = (x + ox) / scale, sy = (y + oy) / scale;
+            const gx0 = Math.min(Math.floor(sx), GW - 2), gy0 = Math.min(Math.floor(sy), GH - 2);
+            const fx = sx - gx0, fy = sy - gy0;
+            const ux = fx * fx * (3 - 2 * fx), uy = fy * fy * (3 - 2 * fy);
+            out[y * TW + x] = (
+              (g[gy0*GW+gx0]*(1-ux) + g[gy0*GW+gx0+1]*ux) * (1-uy) +
+              (g[(gy0+1)*GW+gx0]*(1-ux) + g[(gy0+1)*GW+gx0+1]*ux) * uy
+            ) * 2 * amp - amp;
+          }
+        }
+        return out;
+      };
+
+      // Organic flowing grain — no board joints, one prominent knot
+      const disp1 = makeNoise(55, 6);    // large bow ±6px
+      const disp2 = makeNoise(20, 3);    // medium ±3px
+      const disp3 = makeNoise(8, 1.2);   // fine ±1.2px
+      const colorN = makeNoise(40, 1.3, 80, 40);  // amber tonal range
+
+      ctx.fillStyle = "#BA8840";
+      ctx.fillRect(0, 0, TW, TH);
+      const img = ctx.getImageData(0, 0, TW, TH);
+      const d = img.data;
+
+      // Single prominent knot near center
+      const knots = [{ x: 105, y: 30, r: 9 }];
+
+      for (let y = 0; y < TH; y++) {
+        for (let x = 0; x < TW; x++) {
+          const ni = y * TW + x;
+
+          // Knot: dark center + light halo + strong grain wrap
+          let kDisp = 0, kDark = 0;
+          for (const k of knots) {
+            const dx = x - k.x, dy = y - k.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const kf = Math.max(0, 1 - dist / (k.r * 4.5));
+            if (kf > 0) {
+              kDisp += kf * k.r * Math.sin(Math.atan2(dy, dx)) * 3.0;
+              if (dist < k.r) {
+                kDark += (1 - dist / k.r) * 95;       // very dark center
+              } else if (dist < k.r * 2) {
+                kDark -= Math.max(0, 1 - (dist - k.r) / k.r) * 18; // light halo
+              }
+            }
+          }
+
+          const gY = y + disp1[ni] + disp2[ni] + disp3[ni] + kDisp;
+          const period = 5;
+          const t = ((gY % period) + period) % period / period;
+
+          // Earlywood / latewood — moderate contrast
+          const late = t > 0.58 ? (t - 0.58) / 0.42 : 0;
+          const grain = late * late * 48;
+          const boundary = Math.max(0, 1 - Math.min(t, 1 - t) * 9) * 14;
+
+          const fine = (rng() * 14 - 7) | 0;
+          const cv = colorN[ni];
+
+          // Warm amber-honey brown
+          const dark = grain + boundary + kDark;
+          d[ni*4]   = Math.max(5, Math.min(255, (190 + cv * 24 - dark + fine) | 0));
+          d[ni*4+1] = Math.max(3, Math.min(255, (145 + cv * 18 - dark * 0.83 + fine) | 0));
+          d[ni*4+2] = Math.max(0, Math.min(210, (65  + cv * 9  - dark * 0.52 + fine) | 0));
+          d[ni*4+3] = 255;
+        }
+      }
+
+      ctx.putImageData(img, 0, 0);
       break;
     }
     case "brick": {
@@ -250,6 +324,104 @@ function drawRing(
   const cx = size / 2, cy = size / 2;
   const r = size / 2 - ringW / 2 - 1;
   ctx.lineWidth = ringW;
+
+  // ── Realistic tire: direct ring draw with arc text ──
+  if (f.render?.kind === "pattern" && f.render.name === "tire") {
+    const ro = size / 2 - 2;
+    const ri = ro - ringW + 1;
+    const tRi = ri + ringW * 0.44;  // tread inner boundary
+
+    // Dark rubber base
+    ctx.beginPath();
+    ctx.arc(cx, cy, ro, 0, Math.PI * 2, false);
+    ctx.arc(cx, cy, ri, 0, Math.PI * 2, true);
+    ctx.fillStyle = "#191919";
+    ctx.fill();
+
+    // Tread zone (outer 56%)
+    ctx.beginPath();
+    ctx.arc(cx, cy, ro, 0, Math.PI * 2, false);
+    ctx.arc(cx, cy, tRi, 0, Math.PI * 2, true);
+    ctx.fillStyle = "#202020";
+    ctx.fill();
+
+    // Circumferential grooves
+    const gw = Math.max(1, ringW * 0.055);
+    ctx.strokeStyle = "#0f0f0f";
+    ctx.lineWidth = gw;
+    [tRi, tRi + (ro - tRi) * 0.34, tRi + (ro - tRi) * 0.67, ro - gw * 0.6].forEach(rad => {
+      ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2); ctx.stroke();
+    });
+
+    // Lateral tread cuts (alternating slant)
+    const nCuts = Math.round(2 * Math.PI * (tRi + ro) / 2 / (ringW * 0.58));
+    ctx.lineWidth = Math.max(0.5, ringW * 0.028);
+    for (let i = 0; i < nCuts; i++) {
+      const a = (2 * Math.PI * i) / nCuts;
+      const sl = ringW * 0.04 * (i % 2 === 0 ? 1 : -1);
+      ctx.save();
+      ctx.translate(cx, cy); ctx.rotate(a);
+      ctx.beginPath();
+      ctx.moveTo(tRi, sl); ctx.lineTo(ro, -sl * 0.5);
+      ctx.strokeStyle = "#0f0f0f";
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Inner shoulder highlight
+    ctx.beginPath();
+    ctx.arc(cx, cy, tRi - gw * 0.4, 0, Math.PI * 2);
+    ctx.strokeStyle = "#2c2c2c";
+    ctx.lineWidth = gw * 1.4;
+    ctx.stroke();
+
+    // ── Brand text "MARU  ICON" ──
+    const textR = ri + ringW * 0.19;
+    const fs = Math.max(3, ringW * 0.27);
+    ctx.font = `900 ${fs}px Arial, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    const brand = "MARU  ICON  ";  // 12 chars × 15° = 180° per rep
+    const ca = Math.PI / brand.length;
+
+    for (let rep = 0; rep < 2; rep++) {
+      for (let i = 0; i < brand.length; i++) {
+        const a = rep * Math.PI + i * ca;
+        // Emboss shadow
+        ctx.fillStyle = "#0e0e0e";
+        ctx.save();
+        ctx.translate(cx + 0.5, cy + 0.5); ctx.rotate(a);
+        ctx.translate(0, -textR); ctx.fillText(brand[i], 0, 0);
+        ctx.restore();
+        // Raised face
+        ctx.fillStyle = "#484848";
+        ctx.save();
+        ctx.translate(cx, cy); ctx.rotate(a);
+        ctx.translate(0, -textR); ctx.fillText(brand[i], 0, 0);
+        ctx.restore();
+      }
+    }
+
+    // ── Sub text "SNS  ICON  " (model line) ──
+    const subR = ri + ringW * 0.36;
+    const sfs = Math.max(2, ringW * 0.15);
+    ctx.font = `700 ${sfs}px Arial, sans-serif`;
+    const sub = "SNS  ICON   ";
+    const sca = Math.PI / sub.length;
+    for (let rep = 0; rep < 2; rep++) {
+      for (let i = 0; i < sub.length; i++) {
+        const a = rep * Math.PI + Math.PI / 8 + i * sca;
+        ctx.fillStyle = "#2e2e2e";
+        ctx.save();
+        ctx.translate(cx, cy); ctx.rotate(a);
+        ctx.translate(0, -subR); ctx.fillText(sub[i], 0, 0);
+        ctx.restore();
+      }
+    }
+
+    return;
+  }
 
   if (f.render?.kind === "pattern") {
     const tile = createPatternCanvas(f.render.name);

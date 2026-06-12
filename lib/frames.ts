@@ -6,7 +6,7 @@ export type FrameRender =
 export type Frame = {
   id: string;
   name: string;
-  category: "all" | "cool" | "simple" | "season" | "cute" | "texture" | "gradient";
+  category: "all" | "simple" | "season" | "cute" | "texture" | "gradient";
   ring: string;
   ring2?: string;
   splitDir?: "tb" | "lr";
@@ -16,15 +16,6 @@ export type Frame = {
 };
 
 export const FRAMES: Frame[] = [
-  // cool
-  { id: "hero-red",     name: "レッドヒーロー",   category: "cool",    ring: "#E4000F", emblem: "★", emblemBg: "#E4000F" },
-  { id: "hero-green",   name: "グリーンヒーロー", category: "cool",    ring: "#3a8c3f", emblem: "★", emblemBg: "#3a8c3f" },
-  { id: "princess",     name: "プリンセス",       category: "cool",    ring: "#f472b6", emblem: "♔", emblemBg: "#e879a0" },
-  { id: "forest",       name: "フォレスト",       category: "cool",    ring: "#8B6914", emblem: "🍃", emblemBg: "#8B6914" },
-  { id: "raccoon",      name: "たぬき",           category: "cool",    ring: "#5c3d1e", emblem: "🦝", emblemBg: "#5c3d1e" },
-  { id: "splash-pur",   name: "スプラッシュ紫",   category: "cool",    ring: "#7c3aed", emblem: "✸", emblemBg: "#7c3aed" },
-  { id: "splash-grn",   name: "スプラッシュ緑",   category: "cool",    ring: "#65a30d", emblem: "✸", emblemBg: "#65a30d" },
-  { id: "golden-crest", name: "ゴールデン",       category: "cool",    ring: "#1e3a5f", emblem: "✦", emblemBg: "#b45309" },
   // simple
   { id: "none",         name: "なし",            category: "simple",  ring: "",        emblem: "", emblemBg: "transparent" },
   { id: "simple-white", name: "白",              category: "simple",  ring: "#e5e7eb", emblem: "", emblemBg: "transparent" },
@@ -102,7 +93,6 @@ export const FRAMES: Frame[] = [
 
 export const CATEGORIES = [
   { id: "all",     label: "すべて" },
-  { id: "cool",    label: "クール" },
   { id: "simple",  label: "シンプル" },
   { id: "season",  label: "季節" },
   { id: "cute",    label: "かわいい" },
