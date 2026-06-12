@@ -31,6 +31,118 @@ const RING_PRESETS = [
   "#ffffff", "#9ca3af",
 ];
 
+function createPatternCanvas(name: string): HTMLCanvasElement | null {
+  const c = document.createElement("canvas");
+  const ctx = c.getContext("2d");
+  if (!ctx) return null;
+
+  switch (name) {
+    case "wood": {
+      c.width = 4; c.height = 28;
+      const grains = [
+        [0, 3, "#A0522D"], [3, 1, "#5C2E0A"], [4, 4, "#9B5523"],
+        [8, 1, "#4A2008"], [9, 3, "#B06030"], [12, 2, "#7B3B10"],
+        [14, 1, "#C8783A"], [15, 3, "#8B4513"], [18, 1, "#3E1A06"],
+        [19, 5, "#A05028"], [24, 1, "#6B3010"], [25, 3, "#955520"],
+      ] as [number, number, string][];
+      grains.forEach(([y, h, color]) => {
+        ctx.fillStyle = color;
+        ctx.fillRect(0, y, 4, h);
+      });
+      ctx.fillStyle = "rgba(255,200,120,0.08)";
+      ctx.fillRect(2, 0, 1, 28);
+      break;
+    }
+    case "brick": {
+      c.width = 32; c.height = 18;
+      ctx.fillStyle = "#b8a090";
+      ctx.fillRect(0, 0, 32, 18);
+      const drawBrick = (x: number, y: number, w: number, h: number, color: string) => {
+        ctx.fillStyle = color;
+        ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
+        ctx.fillStyle = "rgba(255,255,255,0.15)";
+        ctx.fillRect(x + 1, y + 1, w - 2, 1);
+        ctx.fillStyle = "rgba(0,0,0,0.2)";
+        ctx.fillRect(x + 1, y + h - 2, w - 2, 1);
+      };
+      drawBrick(0, 0, 16, 9, "#C0582A");
+      drawBrick(16, 0, 16, 9, "#B04820");
+      drawBrick(-8, 9, 16, 9, "#B85030");
+      drawBrick(8, 9, 16, 9, "#C46038");
+      drawBrick(24, 9, 16, 9, "#A84020");
+      break;
+    }
+    case "tile": {
+      c.width = 24; c.height = 24;
+      ctx.fillStyle = "#8eaec8";
+      ctx.fillRect(0, 0, 24, 24);
+      const colors = ["#d6eaf8", "#aed6f1", "#e8f4fc", "#c5dff0"];
+      [[0,0,0],[1,0,1],[0,1,2],[1,1,3]].forEach(([col, row, ci]) => {
+        ctx.fillStyle = colors[ci];
+        ctx.fillRect(col * 12 + 1, row * 12 + 1, 10, 10);
+        ctx.fillStyle = "rgba(255,255,255,0.4)";
+        ctx.fillRect(col * 12 + 1, row * 12 + 1, 10, 1);
+      });
+      break;
+    }
+    case "concrete": {
+      c.width = 20; c.height = 20;
+      ctx.fillStyle = "#9e9e9e";
+      ctx.fillRect(0, 0, 20, 20);
+      const spots = [[2,3,3,"rgba(0,0,0,0.12)"],[7,1,2,"rgba(255,255,255,0.1)"],[12,8,4,"rgba(0,0,0,0.08)"],[4,14,3,"rgba(255,255,255,0.08)"],[16,4,2,"rgba(0,0,0,0.15)"],[1,17,3,"rgba(255,255,255,0.12)"],[10,13,2,"rgba(0,0,0,0.1)"],[17,15,2,"rgba(255,255,255,0.07)"]];
+      spots.forEach(([x, y, s, col]) => {
+        ctx.fillStyle = col as string;
+        ctx.fillRect(x as number, y as number, s as number, s as number);
+      });
+      break;
+    }
+    case "alum": {
+      c.width = 2; c.height = 40;
+      const alumStripes = [
+        [0,2,"#c8c8c8"],[2,1,"#e8e8e8"],[3,2,"#b8b8b8"],[5,1,"#f0f0f0"],
+        [6,3,"#c0c0c0"],[9,1,"#d8d8d8"],[10,2,"#a8a8a8"],[12,1,"#ececec"],
+        [13,3,"#bebebe"],[16,2,"#d0d0d0"],[18,1,"#f4f4f4"],[19,2,"#b0b0b0"],
+        [21,1,"#e4e4e4"],[22,3,"#c4c4c4"],[25,2,"#a4a4a4"],[27,1,"#e8e8e8"],
+        [28,3,"#bcbcbc"],[31,1,"#f0f0f0"],[32,2,"#c8c8c8"],[34,1,"#d4d4d4"],
+        [35,3,"#b4b4b4"],[38,2,"#e0e0e0"],
+      ] as [number, number, string][];
+      alumStripes.forEach(([y, h, color]) => {
+        ctx.fillStyle = color;
+        ctx.fillRect(0, y, 2, h);
+      });
+      break;
+    }
+    case "iron": {
+      c.width = 6; c.height = 6;
+      ctx.fillStyle = "#484848";
+      ctx.fillRect(0, 0, 6, 6);
+      ctx.fillStyle = "#606060"; ctx.fillRect(0, 0, 3, 1);
+      ctx.fillStyle = "#303030"; ctx.fillRect(3, 0, 3, 1);
+      ctx.fillStyle = "#383838"; ctx.fillRect(0, 2, 2, 2);
+      ctx.fillStyle = "#585858"; ctx.fillRect(2, 2, 4, 2);
+      ctx.fillStyle = "#505050"; ctx.fillRect(0, 4, 6, 1);
+      ctx.fillStyle = "rgba(255,255,255,0.05)"; ctx.fillRect(0, 0, 1, 6);
+      break;
+    }
+    case "tire": {
+      c.width = 16; c.height = 16;
+      ctx.fillStyle = "#111111";
+      ctx.fillRect(0, 0, 16, 16);
+      ctx.strokeStyle = "#2d2d2d"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(-2, 10); ctx.lineTo(6, -2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(6, 18); ctx.lineTo(18, 6); ctx.stroke();
+      ctx.strokeStyle = "#262626"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(-2, 14); ctx.lineTo(2, -2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(14, 18); ctx.lineTo(18, 14); ctx.stroke();
+      ctx.strokeStyle = "#383838"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0, 16); ctx.lineTo(16, 0); ctx.stroke();
+      break;
+    }
+    default: return null;
+  }
+  return c;
+}
+
 function drawRing(
   ctx: CanvasRenderingContext2D,
   f: Frame,
@@ -44,6 +156,18 @@ function drawRing(
   const cx = size / 2, cy = size / 2;
   const r = size / 2 - ringW / 2 - 1;
   ctx.lineWidth = ringW;
+
+  if (f.render?.kind === "pattern") {
+    const tile = createPatternCanvas(f.render.name);
+    if (!tile) return;
+    const pattern = ctx.createPattern(tile, "repeat");
+    if (!pattern) return;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = pattern;
+    ctx.stroke();
+    return;
+  }
 
   if (f.render?.kind === "segments") {
     const { colors, n } = f.render;
@@ -680,7 +804,18 @@ function FrameThumb({ frame, size, color1, color2 }: {
       return;
     }
 
-    if (frame.render?.kind === "segments") {
+    if (frame.render?.kind === "pattern") {
+      const tile = createPatternCanvas(frame.render.name);
+      if (tile) {
+        const pattern = ctx.createPattern(tile, "repeat");
+        if (pattern) {
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.strokeStyle = pattern;
+          ctx.stroke();
+        }
+      }
+    } else if (frame.render?.kind === "segments") {
       const { colors, n } = frame.render;
       const seg = (2 * Math.PI) / n;
       const start = -Math.PI / 2;

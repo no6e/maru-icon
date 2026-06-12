@@ -1,6 +1,7 @@
 export type FrameRender =
   | { kind: "conic"; stops: [number, string][] }
-  | { kind: "segments"; colors: string[]; n: number };
+  | { kind: "segments"; colors: string[]; n: number }
+  | { kind: "pattern"; name: "wood" | "brick" | "tile" | "concrete" | "alum" | "iron" | "tire" };
 
 export type Frame = {
   id: string;
@@ -78,30 +79,12 @@ export const FRAMES: Frame[] = [
     render: { kind: "conic", stops: [[0,"#c084fc"],[0.33,"#f0abfc"],[0.66,"#818cf8"],[1,"#c084fc"]] },
   },
   // texture
-  {
-    id: "tx-wood", name: "木", category: "texture", ring: "#8B4513", emblem: "", emblemBg: "transparent",
-    render: { kind: "conic", stops: [[0,"#8B4513"],[0.1,"#A0522D"],[0.2,"#5C2E0A"],[0.35,"#A0522D"],[0.5,"#7B3B10"],[0.65,"#C07040"],[0.8,"#6B3410"],[0.9,"#A0522D"],[1,"#8B4513"]] },
-  },
-  {
-    id: "tx-brick", name: "レンガ", category: "texture", ring: "#B85C38", emblem: "", emblemBg: "transparent",
-    render: { kind: "segments", colors: ["#B85C38","#8B3A22","#C4724A","#7A2E18"], n: 16 },
-  },
-  {
-    id: "tx-tile", name: "タイル", category: "texture", ring: "#90caf9", emblem: "", emblemBg: "transparent",
-    render: { kind: "segments", colors: ["#e3f2fd","#5b9bd5","#e3f2fd","#2a7abd"], n: 12 },
-  },
-  {
-    id: "tx-concrete", name: "コンクリ", category: "texture", ring: "#9e9e9e", emblem: "", emblemBg: "transparent",
-    render: { kind: "conic", stops: [[0,"#9e9e9e"],[0.15,"#bdbdbd"],[0.3,"#7a7a7a"],[0.45,"#adadad"],[0.6,"#888888"],[0.75,"#c0c0c0"],[0.9,"#7e7e7e"],[1,"#9e9e9e"]] },
-  },
-  {
-    id: "tx-alum", name: "アルミ", category: "texture", ring: "#c0c0c0", emblem: "", emblemBg: "transparent",
-    render: { kind: "conic", stops: [[0,"#b0b0b0"],[0.15,"#e8e8e8"],[0.3,"#a0a0a0"],[0.45,"#f0f0f0"],[0.6,"#a8a8a8"],[0.75,"#e0e0e0"],[0.9,"#a0a0a0"],[1,"#b0b0b0"]] },
-  },
-  {
-    id: "tx-iron", name: "鉄", category: "texture", ring: "#4a4a4a", emblem: "", emblemBg: "transparent",
-    render: { kind: "conic", stops: [[0,"#3a3a3a"],[0.2,"#606060"],[0.4,"#2a2a2a"],[0.6,"#555555"],[0.8,"#303030"],[1,"#3a3a3a"]] },
-  },
+  { id: "tx-wood",     name: "木",       category: "texture", ring: "#8B4513", emblem: "",   emblemBg: "transparent", render: { kind: "pattern", name: "wood" } },
+  { id: "tx-brick",    name: "レンガ",   category: "texture", ring: "#B85C38", emblem: "",   emblemBg: "transparent", render: { kind: "pattern", name: "brick" } },
+  { id: "tx-tile",     name: "タイル",   category: "texture", ring: "#90caf9", emblem: "",   emblemBg: "transparent", render: { kind: "pattern", name: "tile" } },
+  { id: "tx-concrete", name: "コンクリ", category: "texture", ring: "#9e9e9e", emblem: "",   emblemBg: "transparent", render: { kind: "pattern", name: "concrete" } },
+  { id: "tx-alum",     name: "アルミ",   category: "texture", ring: "#c0c0c0", emblem: "",   emblemBg: "transparent", render: { kind: "pattern", name: "alum" } },
+  { id: "tx-iron",     name: "鉄",       category: "texture", ring: "#4a4a4a", emblem: "",   emblemBg: "transparent", render: { kind: "pattern", name: "iron" } },
   {
     id: "tx-crystal", name: "クリスタル", category: "texture", ring: "#a8d8ff", emblem: "", emblemBg: "transparent",
     render: { kind: "conic", stops: [[0,"#ff88aa"],[0.14,"#ffbb55"],[0.28,"#aaff88"],[0.42,"#55aaff"],[0.57,"#aa88ff"],[0.71,"#ff55cc"],[0.85,"#ff8844"],[1,"#ff88aa"]] },
@@ -114,10 +97,7 @@ export const FRAMES: Frame[] = [
     id: "tx-vine", name: "ツタ", category: "texture", ring: "#2d6a27", emblem: "🌿", emblemBg: "#1a4a18",
     render: { kind: "segments", colors: ["#2d6a27","#1a4a18","#3d8a37","#234d1e"], n: 12 },
   },
-  {
-    id: "tx-tire", name: "タイヤ", category: "texture", ring: "#1a1a1a", emblem: "", emblemBg: "transparent",
-    render: { kind: "segments", colors: ["#1a1a1a","#3a3a3a","#222222","#444444"], n: 20 },
-  },
+  { id: "tx-tire", name: "タイヤ", category: "texture", ring: "#1a1a1a", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "tire" } },
 ];
 
 export const CATEGORIES = [
