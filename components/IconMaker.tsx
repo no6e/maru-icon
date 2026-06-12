@@ -27,13 +27,37 @@ function drawRing(
   color2?: string,
   ringPct = 8.5
 ) {
-  if (!color1) return;
+  if (!color1 && !f.render) return;
   const ringW = size * (ringPct / 100);
   const cx = size / 2, cy = size / 2;
   const r = size / 2 - ringW / 2 - 1;
   ctx.lineWidth = ringW;
-  const c2 = color2 ?? f.ring2;
 
+  if (f.render?.kind === "segments") {
+    const { colors, n } = f.render;
+    const seg = (2 * Math.PI) / n;
+    const start = -Math.PI / 2;
+    const gap = 0.003;
+    for (let i = 0; i < n; i++) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, start + i * seg - gap, start + (i + 1) * seg + gap);
+      ctx.strokeStyle = colors[i % colors.length];
+      ctx.stroke();
+    }
+    return;
+  }
+
+  if (f.render?.kind === "conic") {
+    const g = ctx.createConicGradient(-Math.PI / 2, cx, cy);
+    f.render.stops.forEach(([offset, color]) => g.addColorStop(offset, color));
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = g;
+    ctx.stroke();
+    return;
+  }
+
+  const c2 = color2 ?? f.ring2;
   if (c2 && f.splitDir) {
     if (f.splitDir === "tb") {
       ctx.beginPath();
@@ -376,8 +400,8 @@ export default function IconMaker() {
                 </div>
               )}
 
-              {/* カラーカスタマイズ */}
-              {frame.id !== "none" && (
+              {/* カラーカスタマイズ（テクスチャ・なし以外） */}
+              {frame.id !== "none" && !frame.render && (
                 <div className="mt-3 pt-3 border-t border-gray-100">
                   <p className="text-xs font-semibold text-gray-500 mb-2">
                     {frame.splitDir ? "カラーA（左 / 上）" : "フレームカラー"}
@@ -601,47 +625,53 @@ function FrameThumb({ frame, size, color1, color2 }: {
     const cx = size / 2, cy = size / 2, r = size / 2 - 2;
     ctx.clearRect(0, 0, size, size);
 
-    if (!frame.ring && !color1) {
+    const lw = size * 0.15;
+    ctx.lineWidth = lw;
+
+    if (!frame.ring && !frame.render && !color1) {
       ctx.setLineDash([3, 3]);
       ctx.beginPath();
       ctx.arc(cx, cy, r, 0, Math.PI * 2);
       ctx.strokeStyle = "#d1d5db";
-      ctx.lineWidth = size * 0.15;
       ctx.stroke();
       ctx.setLineDash([]);
       return;
     }
 
-    const c1 = color1 ?? frame.ring;
-    const c2 = color2 ?? frame.ring2;
-    const lw = size * 0.15;
-    ctx.lineWidth = lw;
-
-    if (c2 && frame.splitDir) {
-      if (frame.splitDir === "tb") {
+    if (frame.render?.kind === "segments") {
+      const { colors, n } = frame.render;
+      const seg = (2 * Math.PI) / n;
+      const start = -Math.PI / 2;
+      for (let i = 0; i < n; i++) {
         ctx.beginPath();
-        ctx.arc(cx, cy, r, Math.PI, 2 * Math.PI);
-        ctx.strokeStyle = c1;
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI);
-        ctx.strokeStyle = c2;
-        ctx.stroke();
-      } else {
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, Math.PI / 2, 3 * Math.PI / 2);
-        ctx.strokeStyle = c1;
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, -Math.PI / 2, Math.PI / 2);
-        ctx.strokeStyle = c2;
+        ctx.arc(cx, cy, r, start + i * seg, start + (i + 1) * seg + 0.01);
+        ctx.strokeStyle = colors[i % colors.length];
         ctx.stroke();
       }
-    } else {
+    } else if (frame.render?.kind === "conic") {
+      const g = ctx.createConicGradient(-Math.PI / 2, cx, cy);
+      frame.render.stops.forEach(([offset, color]) => g.addColorStop(offset, color));
       ctx.beginPath();
       ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.strokeStyle = c1;
+      ctx.strokeStyle = g;
       ctx.stroke();
+    } else {
+      const c1 = color1 ?? frame.ring;
+      const c2 = color2 ?? frame.ring2;
+      if (c2 && frame.splitDir) {
+        if (frame.splitDir === "tb") {
+          ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI, 2 * Math.PI); ctx.strokeStyle = c1; ctx.stroke();
+          ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI); ctx.strokeStyle = c2; ctx.stroke();
+        } else {
+          ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI / 2, 3 * Math.PI / 2); ctx.strokeStyle = c1; ctx.stroke();
+          ctx.beginPath(); ctx.arc(cx, cy, r, -Math.PI / 2, Math.PI / 2); ctx.strokeStyle = c2; ctx.stroke();
+        }
+      } else {
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.strokeStyle = c1;
+        ctx.stroke();
+      }
     }
 
     if (frame.emblem) {
