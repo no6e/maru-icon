@@ -1074,7 +1074,6 @@ export default function IconMaker() {
       </div>
 
       <canvas ref={offscreenRef} className="hidden" />
-
     </div>
   );
 }
