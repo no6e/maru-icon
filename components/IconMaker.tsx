@@ -54,22 +54,116 @@ function createPatternCanvas(name: string): HTMLCanvasElement | null {
       break;
     }
     case "brick": {
-      c.width = 32; c.height = 18;
-      ctx.fillStyle = "#b8a090";
-      ctx.fillRect(0, 0, 32, 18);
-      const drawBrick = (x: number, y: number, w: number, h: number, color: string) => {
-        ctx.fillStyle = color;
-        ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
-        ctx.fillStyle = "rgba(255,255,255,0.15)";
-        ctx.fillRect(x + 1, y + 1, w - 2, 1);
-        ctx.fillStyle = "rgba(0,0,0,0.2)";
-        ctx.fillRect(x + 1, y + h - 2, w - 2, 1);
+      // 4-row tile with per-pixel smooth noise for natural irregularity
+      const TW = 120, TH = 44;
+      c.width = TW; c.height = TH;
+
+      let prng = 0xD3B07A5F;
+      const rng = () => {
+        prng ^= prng << 13; prng ^= prng >>> 17; prng ^= prng << 5;
+        return (prng >>> 0) / 0x100000000;
       };
-      drawBrick(0, 0, 16, 9, "#C0582A");
-      drawBrick(16, 0, 16, 9, "#B04820");
-      drawBrick(-8, 9, 16, 9, "#B85030");
-      drawBrick(8, 9, 16, 9, "#C46038");
-      drawBrick(24, 9, 16, 9, "#A84020");
+
+      // Pre-generate smooth value noise (bilinear-interpolated random grid)
+      const makeNoise = (scale: number, amp: number, ox = 0, oy = 0): Float32Array => {
+        const GW = Math.ceil(TW / scale) + 2;
+        const GH = Math.ceil(TH / scale) + 2;
+        const g = new Float32Array(GW * GH);
+        for (let i = 0; i < g.length; i++) g[i] = rng();
+        const out = new Float32Array(TW * TH);
+        for (let y = 0; y < TH; y++) {
+          for (let x = 0; x < TW; x++) {
+            const sx = (x + ox) / scale, sy = (y + oy) / scale;
+            const gx0 = Math.floor(sx), gy0 = Math.floor(sy);
+            const fx = sx - gx0, fy = sy - gy0;
+            const ux = fx * fx * (3 - 2 * fx), uy = fy * fy * (3 - 2 * fy);
+            out[y * TW + x] = (
+              (g[gy0*GW+gx0]*(1-ux) + g[gy0*GW+gx0+1]*ux) * (1-uy) +
+              (g[(gy0+1)*GW+gx0]*(1-ux) + g[(gy0+1)*GW+gx0+1]*ux) * uy
+            ) * 2 * amp - amp;
+          }
+        }
+        return out;
+      };
+
+      // Two octaves of smooth noise for surface variation
+      const largeN = makeNoise(14, 38);        // big tonal blobs ±38
+      const medN   = makeNoise(5, 20, 47, 31); // medium variation ±20
+
+      // Light cream mortar
+      ctx.fillStyle = "#c8b8a8";
+      ctx.fillRect(0, 0, TW, TH);
+
+      const img = ctx.getImageData(0, 0, TW, TH);
+      const d = img.data;
+
+      // Mortar texture via noise
+      const mortarN = makeNoise(4, 10, 90, 60);
+      for (let i = 0; i < TW * TH; i++) {
+        const n = mortarN[i] | 0;
+        d[i*4]   = Math.max(0, Math.min(255, d[i*4]   + n));
+        d[i*4+1] = Math.max(0, Math.min(255, d[i*4+1] + n));
+        d[i*4+2] = Math.max(0, Math.min(255, d[i*4+2] + ((n * 0.9) | 0)));
+      }
+
+      // Pale terracotta / salmon tones — light and stylish
+      const brickPalette: [number, number, number][] = [
+        [222, 162, 138], // dusty salmon
+        [235, 178, 155], // light peach-coral
+        [210, 148, 122], // medium terracotta
+        [242, 192, 170], // very pale peach
+        [218, 158, 132], // warm salmon
+        [200, 138, 112], // deeper dusty rose
+        [238, 185, 162], // soft apricot
+        [226, 170, 145], // classic pale brick
+      ];
+
+      // Layout: 4 rows, each row has 4 bricks (30px unit), stagger odd rows by 15px
+      const BW = 28, BH = 9;
+      for (let row = 0; row < 4; row++) {
+        const by = row * 11 + 1;
+        const xOff = row % 2 === 1 ? -15 : 0;
+        for (let col = 0; col < 4; col++) {
+          const bx = 1 + col * 30 + xOff;
+          const ci = (row * 4 + col) % 8;
+          const [r0, g0, b0] = brickPalette[ci];
+          // Per-brick tint variation ±22 (subtle, not harsh)
+          const tint = (rng() * 44 - 22) | 0;
+          const br = Math.max(140, Math.min(255, r0 + tint));
+          const bg_ = Math.max(100, Math.min(240, g0 + ((tint * 0.7) | 0)));
+          const bb  = Math.max(70,  Math.min(220, b0 + ((tint * 0.55) | 0)));
+
+          for (let dy = 0; dy < BH; dy++) {
+            for (let dx = 0; dx < BW; dx++) {
+              const px = ((bx + dx) % TW + TW) % TW;
+              const py = by + dy;
+              if (py < 0 || py >= TH) continue;
+
+              const ni = py * TW + px;
+              // Smooth noise + fine grain
+              const smooth = ((largeN[ni] * 0.7 + medN[ni]) ) | 0;
+              const fine   = (rng() * 22 - 11) | 0;
+              // Horizontal layering (light kiln lines)
+              const grain  = (Math.sin(dx * 0.4 + ci * 1.6) * 7) | 0;
+              // Soft edge depth
+              const ex = Math.min(dx, BW - 1 - dx);
+              const ey = Math.min(dy, BH - 1 - dy);
+              const edgeDark = Math.min(ex, ey) < 1 ? 22 : Math.min(ex, ey) < 2 ? 8 : 0;
+              const bottomDark = dy >= BH - 2 ? (BH - 1 - dy) === 0 ? 22 : 10 : 0;
+              const topLight   = dy === 1 ? 10 : 0;
+
+              const delta = smooth + fine + grain + topLight - edgeDark - bottomDark;
+              const pi = ni * 4;
+              d[pi]   = Math.max(120, Math.min(255, br  + delta));
+              d[pi+1] = Math.max(90,  Math.min(250, bg_ + ((delta * 0.75) | 0)));
+              d[pi+2] = Math.max(60,  Math.min(230, bb  + ((delta * 0.6)  | 0)));
+              d[pi+3] = 255;
+            }
+          }
+        }
+      }
+
+      ctx.putImageData(img, 0, 0);
       break;
     }
     case "tile": {
