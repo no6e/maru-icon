@@ -13,6 +13,18 @@ const BG_COLORS = [
   { color: "#fbbf24", label: "イエロー" },
 ];
 
+const FILTERS = [
+  { id: "none",    name: "なし",       css: "" },
+  { id: "sepia",   name: "セピア",     css: "sepia(0.9)" },
+  { id: "mono",    name: "モノクロ",   css: "grayscale(1)" },
+  { id: "vintage", name: "ヴィンテージ", css: "sepia(0.45) contrast(0.85) brightness(1.1) saturate(0.75)" },
+  { id: "warm",    name: "ウォーム",   css: "sepia(0.3) saturate(1.5) brightness(1.05)" },
+  { id: "cool",    name: "クール",     css: "saturate(0.85) brightness(1.08) hue-rotate(15deg)" },
+  { id: "fade",    name: "フェード",   css: "contrast(0.8) brightness(1.2) saturate(0.6)" },
+  { id: "vivid",   name: "ビビッド",   css: "saturate(2) contrast(1.1)" },
+  { id: "drama",   name: "ドラマ",     css: "contrast(1.5) brightness(0.85) saturate(0.9)" },
+];
+
 const RING_PRESETS = [
   "#E4000F", "#f97316", "#fbbf24", "#34d399",
   "#60a5fa", "#7c3aed", "#f472b6", "#1a1a1a",
@@ -99,6 +111,7 @@ export default function IconMaker() {
   const dragHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [resetConfirm, setResetConfirm] = useState(false);
   const resetConfirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [filterId, setFilterId] = useState("none");
   const [customRingColor, setCustomRingColor] = useState<string | null>(null);
   const [customRingColor2, setCustomRingColor2] = useState<string | null>(null);
   const [ringPct, setRingPct] = useState(8.5);
@@ -135,6 +148,8 @@ export default function IconMaker() {
       const scale = zoom / 100;
       const imgW = innerR * 2 * scale;
       const imgH = (photoRef.current.naturalHeight / photoRef.current.naturalWidth) * imgW;
+      const filterCss = FILTERS.find((fi) => fi.id === filterId)?.css ?? "";
+      ctx.filter = filterCss || "none";
       ctx.drawImage(
         photoRef.current,
         cx - imgW / 2 + offsetX,
@@ -142,6 +157,7 @@ export default function IconMaker() {
         imgW,
         imgH
       );
+      ctx.filter = "none";
     }
     ctx.restore();
 
@@ -162,7 +178,7 @@ export default function IconMaker() {
       ctx.textBaseline = "middle";
       ctx.fillText(f.emblem, cx, ey);
     }
-  }, [selectedFrameId, bgColor, zoom, offsetX, offsetY, customRingColor, customRingColor2, ringPct]);
+  }, [selectedFrameId, bgColor, zoom, offsetX, offsetY, customRingColor, customRingColor2, ringPct, filterId]);
 
   useEffect(() => {
     drawPreview();
@@ -244,6 +260,8 @@ export default function IconMaker() {
       const ratio = previewRef.current ? previewRef.current.width / SIZE : 1;
       const imgW = innerR * 2 * scale;
       const imgH = (photoRef.current.naturalHeight / photoRef.current.naturalWidth) * imgW;
+      const filterCss = FILTERS.find((fi) => fi.id === filterId)?.css ?? "";
+      ctx.filter = filterCss || "none";
       ctx.drawImage(
         photoRef.current,
         cx - imgW / 2 + offsetX / ratio,
@@ -251,6 +269,7 @@ export default function IconMaker() {
         imgW,
         imgH
       );
+      ctx.filter = "none";
     }
     ctx.restore();
 
@@ -500,6 +519,29 @@ export default function IconMaker() {
               ))}
             </div>
           </div>
+          {/* フィルター */}
+          <div className="px-5 pb-3 border-t border-gray-100 pt-3">
+            <p className="text-xs text-gray-400 mb-2">フィルター</p>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {FILTERS.map((fi) => (
+                <button
+                  key={fi.id}
+                  onClick={() => setFilterId(fi.id)}
+                  className={`flex-shrink-0 text-center transition-opacity ${filterId === fi.id ? "opacity-100" : "opacity-50 hover:opacity-75"}`}
+                >
+                  <div
+                    className={`w-11 h-11 rounded-full border-2 mx-auto mb-1 ${filterId === fi.id ? "border-red-500" : "border-gray-200"}`}
+                    style={{
+                      background: "linear-gradient(135deg, #f9a8d4, #fbbf24, #34d399, #60a5fa)",
+                      filter: fi.css || undefined,
+                    }}
+                  />
+                  <p className="text-[9px] text-gray-600 leading-tight">{fi.name}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* 背景色 */}
           <div className="px-5 pb-5 border-t border-gray-100 pt-3">
             <p className="text-xs text-gray-400 mb-2">背景色</p>
