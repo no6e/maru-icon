@@ -5,7 +5,7 @@ export type FrameRender =
 export type Frame = {
   id: string;
   name: string;
-  category: "all" | "cool" | "simple" | "season" | "cute" | "texture";
+  category: "all" | "cool" | "simple" | "season" | "cute" | "texture" | "gradient";
   ring: string;
   ring2?: string;
   splitDir?: "tb" | "lr";
@@ -44,6 +44,39 @@ export const FRAMES: Frame[] = [
   { id: "star",         name: "スター",          category: "cute",    ring: "#fbbf24", emblem: "⭐", emblemBg: "#d97706" },
   { id: "heart",        name: "ハート",          category: "cute",    ring: "#f43f5e", emblem: "♥",  emblemBg: "#e11d48" },
   { id: "crown",        name: "クラウン",        category: "cute",    ring: "#fcd34d", emblem: "♛",  emblemBg: "#b45309" },
+  // gradient
+  {
+    id: "gd-sunset", name: "サンセット", category: "gradient", ring: "#ff6b6b", emblem: "", emblemBg: "transparent",
+    render: { kind: "conic", stops: [[0,"#ff6b6b"],[0.25,"#ff8e53"],[0.5,"#ff6b9d"],[0.75,"#ff4757"],[1,"#ff6b6b"]] },
+  },
+  {
+    id: "gd-ocean", name: "オーシャン", category: "gradient", ring: "#48cae4", emblem: "", emblemBg: "transparent",
+    render: { kind: "conic", stops: [[0,"#667eea"],[0.33,"#48cae4"],[0.66,"#0096c7"],[1,"#667eea"]] },
+  },
+  {
+    id: "gd-aurora", name: "オーロラ", category: "gradient", ring: "#43b89c", emblem: "", emblemBg: "transparent",
+    render: { kind: "conic", stops: [[0,"#43b89c"],[0.2,"#67e8a9"],[0.4,"#38bdf8"],[0.6,"#818cf8"],[0.8,"#a78bfa"],[1,"#43b89c"]] },
+  },
+  {
+    id: "gd-neon", name: "ネオン", category: "gradient", ring: "#ff0080", emblem: "", emblemBg: "transparent",
+    render: { kind: "conic", stops: [[0,"#ff0080"],[0.25,"#ff8c00"],[0.5,"#00ff80"],[0.75,"#0080ff"],[1,"#ff0080"]] },
+  },
+  {
+    id: "gd-gold", name: "ゴールド", category: "gradient", ring: "#f7c948", emblem: "", emblemBg: "transparent",
+    render: { kind: "conic", stops: [[0,"#f7c948"],[0.2,"#c9970f"],[0.4,"#ffd970"],[0.6,"#e8b820"],[0.8,"#f0c030"],[1,"#f7c948"]] },
+  },
+  {
+    id: "gd-cherry", name: "チェリー", category: "gradient", ring: "#ff6fa8", emblem: "", emblemBg: "transparent",
+    render: { kind: "conic", stops: [[0,"#ff6fa8"],[0.3,"#ffadd2"],[0.6,"#ff4081"],[0.9,"#ff8fb1"],[1,"#ff6fa8"]] },
+  },
+  {
+    id: "gd-midnight", name: "ミッドナイト", category: "gradient", ring: "#1a1a4e", emblem: "", emblemBg: "transparent",
+    render: { kind: "conic", stops: [[0,"#1a1a4e"],[0.25,"#4a1a8e"],[0.5,"#1a3a7e"],[0.75,"#6d28d9"],[1,"#1a1a4e"]] },
+  },
+  {
+    id: "gd-lavender", name: "ラベンダー", category: "gradient", ring: "#c084fc", emblem: "", emblemBg: "transparent",
+    render: { kind: "conic", stops: [[0,"#c084fc"],[0.33,"#f0abfc"],[0.66,"#818cf8"],[1,"#c084fc"]] },
+  },
   // texture
   {
     id: "tx-wood", name: "木", category: "texture", ring: "#8B4513", emblem: "", emblemBg: "transparent",
@@ -93,7 +126,8 @@ export const CATEGORIES = [
   { id: "simple",  label: "シンプル" },
   { id: "season",  label: "季節" },
   { id: "cute",    label: "かわいい" },
-  { id: "texture", label: "テクスチャ" },
+  { id: "gradient", label: "グラデ" },
+  { id: "texture",  label: "テクスチャ" },
 ] as const;
 
 export function getFrame(id: string): Frame {
