@@ -47,23 +47,23 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <Script
-        async
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4661946188646786"
-        crossOrigin="anonymous"
-        strategy="beforeInteractive"
-      />
-      <Script
-        src="https://www.googletagmanager.com/gtag/js?id=G-WS13N4WMN9"
-        strategy="afterInteractive"
-      />
-      <Script id="gtag-init" strategy="afterInteractive">{`
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-WS13N4WMN9');
-      `}</Script>
       <body className="bg-gray-50 min-h-screen">
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4661946188646786"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-WS13N4WMN9"
+          strategy="afterInteractive"
+        />
+        <Script id="gtag-init" strategy="afterInteractive">{`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-WS13N4WMN9');
+        `}</Script>
         <header className="bg-white border-b-2 border-red-500 sticky top-0 z-50 shadow-sm">
           <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
             <a href="/" className="flex items-center gap-2">
