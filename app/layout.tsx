@@ -45,6 +45,12 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <Script
+        async
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4661946188646786"
+        crossOrigin="anonymous"
+        strategy="afterInteractive"
+      />
+      <Script
         src="https://www.googletagmanager.com/gtag/js?id=G-WS13N4WMN9"
         strategy="afterInteractive"
       />
@@ -106,6 +112,9 @@ export default function RootLayout({
               </a>
               <a href="/how-to/" className="hover:text-gray-600">
                 使い方
+              </a>
+              <a href="/privacy/" className="hover:text-gray-600">
+                プライバシーポリシー
               </a>
             </div>
             <p className="text-xs text-gray-300 mt-4">© 2026 まるアイコン</p>
