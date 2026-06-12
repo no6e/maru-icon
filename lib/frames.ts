@@ -32,8 +32,7 @@ export const FRAMES: Frame[] = [
   { id: "autumn",       name: "秋（もみじ）",    category: "season",  ring: "#f97316", emblem: "🍂", emblemBg: "#c2410c" },
   { id: "winter",       name: "冬（雪）",        category: "season",  ring: "#bae6fd", emblem: "❄",  emblemBg: "#0284c7" },
   // cute
-  { id: "rainbow",      name: "レインボー",      category: "cute",    ring: "#f472b6", emblem: "🌈", emblemBg: "#7c3aed" },
-  { id: "star",         name: "スター",          category: "cute",    ring: "#fbbf24", emblem: "⭐", emblemBg: "#d97706" },
+{ id: "star",         name: "スター",          category: "cute",    ring: "#fbbf24", emblem: "⭐", emblemBg: "#d97706" },
   { id: "heart",        name: "ハート",          category: "cute",    ring: "#f43f5e", emblem: "♥",  emblemBg: "#e11d48" },
   { id: "crown",        name: "クラウン",        category: "cute",    ring: "#fcd34d", emblem: "♛",  emblemBg: "#b45309" },
   // gradient
