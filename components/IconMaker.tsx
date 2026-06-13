@@ -499,8 +499,9 @@ function createPatternCanvas(name: string): HTMLCanvasElement | null {
       break;
     }
     case "alum": {
-      // Brushed aluminum: fine horizontal streaks with noise-driven brightness
-      const TW = 2, TH = 400;
+      // Brushed aluminum: diagonal scratch streaks (45°), multi-scale, seamlessly tiling
+      // NSIZE = TW = TH ensures pos = (y-x) mod NSIZE tiles perfectly in both axes
+      const TW = 200, TH = 200;
       c.width = TW;
       c.height = TH;
 
@@ -512,30 +513,54 @@ function createPatternCanvas(name: string): HTMLCanvasElement | null {
         return (prng >>> 0) / 0x100000000;
       };
 
-      // Smooth base envelope
-      const NB = 22;
-      const baseG = new Float32Array(NB);
-      for (let i = 0; i < NB; i++) baseG[i] = rng();
+      // 1D streak brightness table, period = NSIZE = TW = TH
+      const NSIZE = 200;
+      const streakTable = new Float32Array(NSIZE);
+      for (let i = 0; i < NSIZE; i++) streakTable[i] = rng();
+
+      const sampleStreak = (t: number): number => {
+        const p = ((t % NSIZE) + NSIZE) % NSIZE;
+        const i0 = Math.floor(p) % NSIZE;
+        const i1 = (i0 + 1) % NSIZE;
+        const f = p - Math.floor(p);
+        const u = f * f * (3 - 2 * f);
+        return streakTable[i0] * (1 - u) + streakTable[i1] * u;
+      };
+
+      // 2D warp noise, periodic over TW×TH (8×8 grid)
+      const WG = 8;
+      const warpTable = new Float32Array(WG * WG);
+      for (let i = 0; i < WG * WG; i++) warpTable[i] = rng() * 2 - 1;
+
+      const sampleWarp = (wx: number, wy: number): number => {
+        const ix = ((Math.floor(wx) % WG) + WG) % WG;
+        const iy = ((Math.floor(wy) % WG) + WG) % WG;
+        const fx = wx - Math.floor(wx), fy = wy - Math.floor(wy);
+        const ux = fx * fx * (3 - 2 * fx), uy = fy * fy * (3 - 2 * fy);
+        return (
+          warpTable[iy * WG + ix] * (1 - ux) * (1 - uy) +
+          warpTable[iy * WG + (ix + 1) % WG] * ux * (1 - uy) +
+          warpTable[((iy + 1) % WG) * WG + ix] * (1 - ux) * uy +
+          warpTable[((iy + 1) % WG) * WG + (ix + 1) % WG] * ux * uy
+        );
+      };
 
       const img = ctx.createImageData(TW, TH);
       for (let y = 0; y < TH; y++) {
-        const fy = (y / TH) * (NB - 1);
-        const i0 = Math.min(Math.floor(fy), NB - 2);
-        const t = fy - i0;
-        const u = t * t * (3 - 2 * t);
-        const base = baseG[i0] * (1 - u) + baseG[i0 + 1] * u;
-
-        const streak = rng();
-        // Occasional sharp bright highlights (研磨跡)
-        const highlight = streak > 0.92 ? 0.30 : 0;
-        const v = 0.50 + base * 0.28 + (streak - 0.5) * 0.34 + highlight;
-
         for (let x = 0; x < TW; x++) {
           const ni = y * TW + x;
-          const lum = Math.round(Math.max(80, Math.min(255, v * 255)));
-          img.data[ni * 4] = lum;
+          // Gentle warp for soft waviness
+          const warp = sampleWarp((x / TW) * WG, (y / TH) * WG) * 5;
+          const pos = ((y - x + warp) % NSIZE + NSIZE) % NSIZE;
+          // Low frequencies dominate → gradient feel, fine lines barely visible
+          const s_broad = sampleStreak(pos * 0.014 + 10);  // ~70px 広いグラデ帯
+          const s_mid   = sampleStreak(pos * 0.055 + 70);  // ~18px 中帯
+          const s_fine  = sampleStreak(pos * 0.18  + 140); // ~6px  うっすら質感
+          const v = 0.52 + s_broad * 0.28 + s_mid * 0.12 + s_fine * 0.05;
+          const lum = Math.round(Math.max(128, Math.min(248, v * 255)));
+          img.data[ni * 4]     = lum;
           img.data[ni * 4 + 1] = lum;
-          img.data[ni * 4 + 2] = Math.min(255, lum + 12); // わずかに青みがかったシルバー
+          img.data[ni * 4 + 2] = Math.min(255, lum + 16); // 青みシルバー
           img.data[ni * 4 + 3] = 255;
         }
       }
@@ -936,7 +961,7 @@ export default function IconMaker() {
     const cx = size / 2;
     const cy = size / 2;
     const ringW = size * (ringPct / 100);
-    const innerR = size / 2 - ringW - 2;
+    const innerR = size / 2 - ringW + 1;
 
     ctx.save();
     ctx.beginPath();
@@ -1079,7 +1104,7 @@ export default function IconMaker() {
       const cx = SIZE / 2,
         cy = SIZE / 2;
       const ringW = SIZE * (ringPct / 100);
-      const innerR = SIZE / 2 - ringW - 2;
+      const innerR = SIZE / 2 - ringW + 1;
 
       ctx.save();
       ctx.beginPath();
