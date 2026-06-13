@@ -1,7 +1,7 @@
 export type FrameRender =
   | { kind: "conic"; stops: [number, string][] }
   | { kind: "segments"; colors: string[]; n: number }
-  | { kind: "pattern"; name: "wood" | "brick" | "tile" | "concrete" | "alum" | "iron" | "tire" };
+  | { kind: "pattern"; name: "wood" | "brick" | "tile" | "concrete" | "alum" | "iron" | "tire" | "marble" };
 
 export type Frame = {
   id: string;
@@ -94,7 +94,8 @@ export const FRAMES: Frame[] = [
     id: "tx-vine", name: "ツタ", category: "texture", ring: "#2d6a27", emblem: "🌿", emblemBg: "#1a4a18",
     render: { kind: "segments", colors: ["#2d6a27","#1a4a18","#3d8a37","#234d1e"], n: 12 },
   },
-  { id: "tx-tire", name: "タイヤ", category: "texture", ring: "#1a1a1a", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "tire" } },
+  { id: "tx-tire",   name: "タイヤ",     category: "texture", ring: "#1a1a1a", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "tire" } },
+  { id: "tx-marble", name: "ピンク大理石", category: "texture", ring: "#f2c8d8", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "marble" } },
 ];
 
 export const CATEGORIES = [

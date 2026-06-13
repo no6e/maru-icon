@@ -292,6 +292,90 @@ function createPatternCanvas(name: string): HTMLCanvasElement | null {
       ctx.fillStyle = "rgba(255,255,255,0.05)"; ctx.fillRect(0, 0, 1, 6);
       break;
     }
+    case "marble": {
+      const TW = 200, TH = 200;
+      c.width = TW; c.height = TH;
+
+      let prng = 0xA9B3C7D1;
+      const rng = () => {
+        prng ^= prng << 13; prng ^= prng >>> 17; prng ^= prng << 5;
+        return (prng >>> 0) / 0x100000000;
+      };
+
+      const makeNoise = (scale: number, ox = 0, oy = 0): Float32Array => {
+        const GW = Math.ceil(TW / scale) + 2;
+        const GH = Math.ceil(TH / scale) + 2;
+        const g = new Float32Array(GW * GH);
+        for (let i = 0; i < g.length; i++) g[i] = rng() * 2 - 1;
+        const out = new Float32Array(TW * TH);
+        for (let y = 0; y < TH; y++) {
+          for (let x = 0; x < TW; x++) {
+            const sx = (x + ox) / scale, sy = (y + oy) / scale;
+            const gx0 = Math.min(Math.floor(sx), GW - 2), gy0 = Math.min(Math.floor(sy), GH - 2);
+            const fx = sx - gx0, fy = sy - gy0;
+            const ux = fx * fx * (3 - 2 * fx), uy = fy * fy * (3 - 2 * fy);
+            out[y * TW + x] = (
+              (g[gy0*GW+gx0]*(1-ux) + g[gy0*GW+gx0+1]*ux) * (1-uy) +
+              (g[(gy0+1)*GW+gx0]*(1-ux) + g[(gy0+1)*GW+gx0+1]*ux) * uy
+            );
+          }
+        }
+        return out;
+      };
+
+      const n1 = makeNoise(90,  0,  0);
+      const n2 = makeNoise(45, 40, 60);
+      const n3 = makeNoise(22, 90, 15);
+      const n4 = makeNoise(11, 25, 80);
+      const grain = makeNoise(5, 60, 35);
+
+      const d = ctx.createImageData(TW, TH).data;
+      const img = ctx.createImageData(TW, TH);
+
+      for (let y = 0; y < TH; y++) {
+        for (let x = 0; x < TW; x++) {
+          const ni = y * TW + x;
+
+          // Fractal turbulence
+          const turb = (Math.abs(n1[ni]) + Math.abs(n2[ni]) * 0.5 + Math.abs(n3[ni]) * 0.25 + Math.abs(n4[ni]) * 0.125) / 1.875;
+
+          // Main marble wave (diagonal sweep)
+          const wave  = Math.sin((x * 0.038 + y * 0.014) * Math.PI + turb * 5.5);
+          // Secondary vein (cross direction)
+          const wave2 = Math.sin((-x * 0.018 + y * 0.048) * Math.PI + turb * 3.8 + 2.1);
+
+          const t = ((wave * 0.65 + wave2 * 0.35) + 1) / 2;
+
+          // Veins: darker where wave crosses zero
+          const vein  = Math.pow(Math.max(0, 1 - Math.abs(wave)  * 3.0), 1.8) * 0.42;
+          const vein2 = Math.pow(Math.max(0, 1 - Math.abs(wave2) * 3.5), 2.2) * 0.22;
+          const v = Math.min(1, vein + vein2);
+
+          // Pink marble palette
+          let r, g, b;
+          if (t > 0.5) {
+            const s = (t - 0.5) * 2;
+            r = 242 + (255 - 242) * s; g = 200 + (247 - 200) * s; b = 215 + (250 - 215) * s;
+          } else {
+            const s = t * 2;
+            r = 218 + (242 - 218) * s; g = 168 + (200 - 168) * s; b = 182 + (215 - 182) * s;
+          }
+          // Apply vein
+          r = r * (1 - v) + 196 * v;
+          g = g * (1 - v) + 146 * v;
+          b = b * (1 - v) + 165 * v;
+
+          const gv = grain[ni] * 5;
+          img.data[ni*4]   = Math.max(0, Math.min(255, (r + gv) | 0));
+          img.data[ni*4+1] = Math.max(0, Math.min(255, (g + gv * 0.8) | 0));
+          img.data[ni*4+2] = Math.max(0, Math.min(255, (b + gv * 0.9) | 0));
+          img.data[ni*4+3] = 255;
+        }
+      }
+      void d;
+      ctx.putImageData(img, 0, 0);
+      break;
+    }
     case "tire": {
       c.width = 16; c.height = 16;
       ctx.fillStyle = "#111111";
@@ -729,6 +813,32 @@ export default function IconMaker() {
     );
   };
 
+  const shareToX = async () => {
+    const isMobile = /iP(hone|ad|od)|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+      const blob = await renderIcon().catch(() => null);
+      if (blob) {
+        const file = new File([blob], "maru-icon.png", { type: "image/png" });
+        if (navigator.canShare?.({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: "まるアイコン",
+            text: "プロフィール画像を作ったよ🎉 #まるアイコン",
+            url: "https://maru-icon.com",
+          }).catch(() => {});
+          return;
+        }
+      }
+    }
+    window.open(
+      "https://twitter.com/intent/tweet?text=" +
+        encodeURIComponent("プロフィール画像を作ったよ🎉 #まるアイコン") +
+        "&url=" + encodeURIComponent("https://maru-icon.com"),
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
   const selectFrame = (id: string) => {
     setSelectedFrameId(id);
     setCustomRingColor(null);
@@ -990,14 +1100,24 @@ export default function IconMaker() {
               >
                 ⬇ 画像を保存する
               </button>
-              <button
-                onClick={shareToLine}
-                disabled={!imageSrc}
-                className="w-full py-2.5 text-xs font-bold bg-[#06C755] hover:bg-[#05aa4a] disabled:bg-gray-200 disabled:text-gray-400 text-white rounded-xl transition-colors flex items-center justify-center gap-1.5"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.036 2 11.073c0 4.49 3.164 8.244 7.467 9.01.327.064.773.197.886.453.101.233.066.598.032.835l-.144.857c-.044.253-.202 1.01.887.55 1.089-.46 5.878-3.459 8.02-5.922C20.627 15.29 22 13.306 22 11.073 22 6.036 17.523 2 12 2z"/></svg>
-                LINE で共有
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={shareToLine}
+                  disabled={!imageSrc}
+                  className="flex-1 py-2.5 text-xs font-bold bg-[#06C755] hover:bg-[#05aa4a] disabled:bg-gray-200 disabled:text-gray-400 text-white rounded-xl transition-colors flex items-center justify-center gap-1"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.036 2 11.073c0 4.49 3.164 8.244 7.467 9.01.327.064.773.197.886.453.101.233.066.598.032.835l-.144.857c-.044.253-.202 1.01.887.55 1.089-.46 5.878-3.459 8.02-5.922C20.627 15.29 22 13.306 22 11.073 22 6.036 17.523 2 12 2z"/></svg>
+                  LINE
+                </button>
+                <button
+                  onClick={shareToX}
+                  disabled={!imageSrc}
+                  className="flex-1 py-2.5 text-xs font-bold bg-black hover:bg-gray-800 disabled:bg-gray-200 disabled:text-gray-400 text-white rounded-xl transition-colors flex items-center justify-center gap-1"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                  X でシェア
+                </button>
+              </div>
               {resetConfirm ? (
                 <div className="flex gap-2">
                   <button
