@@ -609,6 +609,96 @@ function createPatternCanvas(name: string): HTMLCanvasElement | null {
       }
       break;
     }
+    case "marble-pink": {
+      const TW = 200, TH = 200;
+      c.width = TW;
+      c.height = TH;
+
+      let prng = 0x6d2b79f5;
+      const rng = () => {
+        prng ^= prng << 13;
+        prng ^= prng >>> 17;
+        prng ^= prng << 5;
+        return (prng >>> 0) / 0x100000000;
+      };
+
+      // Periodic value-noise sampler: grid wraps at exactly `cells`, so the
+      // field repeats every TW pixels -> tile is perfectly seamless.
+      const makeField = (cells: number) => {
+        const scale = TW / cells;
+        const g = new Float32Array(cells * cells);
+        for (let i = 0; i < g.length; i++) g[i] = rng();
+        return (x: number, y: number): number => {
+          const sx = x / scale, sy = y / scale;
+          const gx0 = Math.floor(sx), gy0 = Math.floor(sy);
+          const fx = sx - gx0, fy = sy - gy0;
+          const ux = fx * fx * (3 - 2 * fx), uy = fy * fy * (3 - 2 * fy);
+          const ix0 = ((gx0 % cells) + cells) % cells, ix1 = (ix0 + 1) % cells;
+          const iy0 = ((gy0 % cells) + cells) % cells, iy1 = (iy0 + 1) % cells;
+          return (
+            g[iy0 * cells + ix0] * (1 - ux) * (1 - uy) +
+            g[iy0 * cells + ix1] * ux * (1 - uy) +
+            g[iy1 * cells + ix0] * (1 - ux) * uy +
+            g[iy1 * cells + ix1] * ux * uy
+          );
+        };
+      };
+
+      const f1 = makeField(2);
+      const f2 = makeField(5);
+      const f3 = makeField(11);
+      const wa = makeField(3);
+      const wb = makeField(3);
+      const fbm = (x: number, y: number) =>
+        (f1(x, y) * 0.6 + f2(x, y) * 0.3 + f3(x, y) * 0.16) / 1.06;
+
+      // Pink color ramp (deep coral → mid rose → near white)
+      const ramp = (t: number): [number, number, number] => {
+        const stops: [number, [number, number, number]][] = [
+          [0.0, [238, 138, 156]],
+          [0.45, [248, 188, 200]],
+          [0.78, [252, 224, 232]],
+          [1.0, [255, 244, 248]],
+        ];
+        let a = stops[0], b = stops[stops.length - 1];
+        for (let i = 0; i < stops.length - 1; i++) {
+          if (t >= stops[i][0] && t <= stops[i + 1][0]) { a = stops[i]; b = stops[i + 1]; break; }
+        }
+        const u = (t - a[0]) / Math.max(1e-6, b[0] - a[0]);
+        return [
+          a[1][0] + (b[1][0] - a[1][0]) * u,
+          a[1][1] + (b[1][1] - a[1][1]) * u,
+          a[1][2] + (b[1][2] - a[1][2]) * u,
+        ];
+      };
+
+      const img = ctx.createImageData(TW, TH);
+      for (let y = 0; y < TH; y++) {
+        for (let x = 0; x < TW; x++) {
+          // domain warp: swirl the sample coords (liquid mixing)
+          const qx = wa(x, y), qy = wb(x + 130, y + 70);
+          const wx = x + (qx - 0.5) * 95;
+          const wy = y + (qy - 0.5) * 95;
+          const rx = wa(wx + 40, wy + 90);
+          const ry = wb(wx + 110, wy + 20);
+          const sx2 = wx + (rx - 0.5) * 50;
+          const sy2 = wy + (ry - 0.5) * 50;
+          let v = fbm(sx2, sy2);
+          // contrast curve for stronger light/dark separation
+          v = Math.min(1, Math.max(0, (v - 0.18) / 0.64));
+          v = v * v * (3 - 2 * v);
+          const [r, g8, b] = ramp(v);
+          const grain = (rng() - 0.5) * 5;
+          const o = (y * TW + x) * 4;
+          img.data[o] = Math.round(Math.min(255, r + grain));
+          img.data[o + 1] = Math.round(Math.min(255, g8 + grain));
+          img.data[o + 2] = Math.round(Math.min(255, b + grain));
+          img.data[o + 3] = 255;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      break;
+    }
     case "tire": {
       c.width = 16;
       c.height = 16;

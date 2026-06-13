@@ -1,7 +1,7 @@
 export type FrameRender =
   | { kind: "conic"; stops: [number, string][] }
   | { kind: "segments"; colors: string[]; n: number }
-  | { kind: "pattern"; name: "wood" | "brick" | "tile" | "concrete" | "alum" | "iron" | "tire" | "glitter-pink" | "glitter-gold" | "glitter-silver" | "glitter-holo" | "soccer-ball" | "baseball-ball" | "basketball-ball" | "tennis-ball" | "swim-goggles" | "start-block" | "volley-ball" | "golf-ball" };
+  | { kind: "pattern"; name: "wood" | "brick" | "tile" | "concrete" | "alum" | "iron" | "tire" | "glitter-pink" | "glitter-gold" | "glitter-silver" | "glitter-holo" | "soccer-ball" | "baseball-ball" | "basketball-ball" | "tennis-ball" | "swim-goggles" | "start-block" | "volley-ball" | "golf-ball" | "marble-pink" };
 
 export type Frame = {
   id: string;
@@ -82,8 +82,9 @@ export const FRAMES: Frame[] = [
   { id: "tx-concrete", name: "コンクリ",   category: "texture", ring: "#9e9e9e", emblem: "",   emblemBg: "transparent", render: { kind: "pattern", name: "concrete" } },
   { id: "tx-alum",     name: "アルミ",     category: "texture", ring: "#c0c0c0", emblem: "",   emblemBg: "transparent", render: { kind: "pattern", name: "alum" } },
   { id: "tx-iron",     name: "鉄",         category: "texture", ring: "#4a4a4a", emblem: "",   emblemBg: "transparent", render: { kind: "pattern", name: "iron" } },
+  { id: "tx-marble-pink", name: "ピンク大理石", category: "texture", ring: "#F2D7DF", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "marble-pink" } },
   {
-    id: "tx-crystal", name: "レインボー", category: "texture", ring: "#a8d8ff", emblem: "", emblemBg: "transparent",
+    id: "tx-crystal", name: "レインボー", category: "gradient", ring: "#a8d8ff", emblem: "", emblemBg: "transparent",
     render: { kind: "conic", stops: [[0,"#ff88aa"],[0.14,"#ffbb55"],[0.28,"#aaff88"],[0.42,"#55aaff"],[0.57,"#aa88ff"],[0.71,"#ff55cc"],[0.85,"#ff8844"],[1,"#ff88aa"]] },
   },
   {
