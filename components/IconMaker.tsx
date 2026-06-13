@@ -800,6 +800,46 @@ function createPatternCanvas(name: string): HTMLCanvasElement | null {
       ctx.beginPath(); ctx.arc(16, 12, 3.2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       break;
     }
+    case "start-block": {
+      c.width = 24; c.height = 24;
+      ctx.fillStyle = "#D05A10";
+      ctx.fillRect(0, 0, 24, 24);
+      ctx.lineJoin = "round"; ctx.lineCap = "round";
+      // rail
+      ctx.strokeStyle = "#37424A"; ctx.lineWidth = 2.2;
+      ctx.beginPath(); ctx.moveTo(4, 17); ctx.lineTo(20, 13); ctx.stroke();
+      // pedals
+      ctx.strokeStyle = "#C9CDD2"; ctx.lineWidth = 3.2;
+      ctx.beginPath(); ctx.moveTo(8, 16); ctx.lineTo(11, 11); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(13, 15); ctx.lineTo(17, 9); ctx.stroke();
+      break;
+    }
+    case "volley-ball": {
+      c.width = 24; c.height = 24;
+      ctx.fillStyle = "#F5F2E8";
+      ctx.fillRect(0, 0, 24, 24);
+      ctx.beginPath();
+      ctx.arc(12, 12, 10, 0, Math.PI * 2);
+      ctx.fillStyle = "#F5F2E8"; ctx.fill();
+      const vc = ["#F0C04B", "#5B82AD", "#F5F2E8"];
+      const vbase = -Math.PI / 2, vsw = 0.62;
+      const vctrl = (j: number): [number, number] => {
+        const a = vbase + (Math.PI * j) / 3 + vsw;
+        return [12 + 5.5 * Math.cos(a), 12 + 5.5 * Math.sin(a)];
+      };
+      for (let j = 0; j < 6; j++) {
+        const a0 = vbase + (Math.PI * j) / 3, a1 = vbase + (Math.PI * (j + 1)) / 3;
+        const [c0x, c0y] = vctrl(j), [c1x, c1y] = vctrl(j + 1);
+        ctx.beginPath();
+        ctx.moveTo(12, 12);
+        ctx.quadraticCurveTo(c0x, c0y, 12 + 10.5 * Math.cos(a0), 12 + 10.5 * Math.sin(a0));
+        ctx.arc(12, 12, 10.5, a0, a1);
+        ctx.quadraticCurveTo(c1x, c1y, 12, 12);
+        ctx.closePath();
+        ctx.fillStyle = vc[j % 3]; ctx.fill();
+      }
+      break;
+    }
     default:
       return null;
   }
@@ -971,6 +1011,122 @@ function drawBasketballBall(
   ctx.strokeStyle = "#7A4521";
   ctx.lineWidth = Math.max(0.8, br * 0.045);
   ctx.stroke();
+}
+
+function drawVolleyBall(
+  ctx: CanvasRenderingContext2D,
+  bx: number,
+  by: number,
+  br: number
+) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(bx, by, br, 0, Math.PI * 2);
+  ctx.clip();
+
+  // White base
+  ctx.fillStyle = "#F5F2E8";
+  ctx.fill();
+
+  const colors = ["#F0C04B", "#5B82AD", "#F5F2E8"]; // yellow, blue, white
+  const n = 6;
+  const swirl = 0.62;       // radians of pinwheel twist
+  const base = -Math.PI / 2;
+  // boundary control points (curved seams)
+  const ctrl = (j: number): [number, number] => {
+    const a = base + (2 * Math.PI * j) / n + swirl;
+    return [bx + br * 0.55 * Math.cos(a), by + br * 0.55 * Math.sin(a)];
+  };
+  for (let j = 0; j < n; j++) {
+    const a0 = base + (2 * Math.PI * j) / n;
+    const a1 = base + (2 * Math.PI * (j + 1)) / n;
+    const r0: [number, number] = [bx + br * 1.05 * Math.cos(a0), by + br * 1.05 * Math.sin(a0)];
+    const [c0x, c0y] = ctrl(j);
+    const [c1x, c1y] = ctrl(j + 1);
+    ctx.beginPath();
+    ctx.moveTo(bx, by);
+    ctx.quadraticCurveTo(c0x, c0y, r0[0], r0[1]);
+    ctx.arc(bx, by, br * 1.05, a0, a1);
+    ctx.quadraticCurveTo(c1x, c1y, bx, by);
+    ctx.closePath();
+    ctx.fillStyle = colors[j % 3];
+    ctx.fill();
+  }
+
+  // Seam lines over the curved boundaries
+  ctx.strokeStyle = "rgba(80,80,80,0.18)";
+  ctx.lineWidth = Math.max(0.5, br * 0.03);
+  for (let j = 0; j < n; j++) {
+    const a0 = base + (2 * Math.PI * j) / n;
+    const r0: [number, number] = [bx + br * 1.05 * Math.cos(a0), by + br * 1.05 * Math.sin(a0)];
+    const [cx0, cy0] = ctrl(j);
+    ctx.beginPath();
+    ctx.moveTo(bx, by);
+    ctx.quadraticCurveTo(cx0, cy0, r0[0], r0[1]);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+
+  // Ball outline
+  ctx.beginPath();
+  ctx.arc(bx, by, br, 0, Math.PI * 2);
+  ctx.strokeStyle = "#9aa0a6";
+  ctx.lineWidth = Math.max(0.6, br * 0.035);
+  ctx.stroke();
+}
+
+function drawStartBlock(
+  ctx: CanvasRenderingContext2D,
+  bx: number,
+  by: number,
+  br: number
+) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(bx, by, br, 0, Math.PI * 2);
+  ctx.clip();
+
+  // Orange base
+  ctx.fillStyle = "#D05A10";
+  ctx.fill();
+
+  // Local coord helper (side view, athlete pushes toward right)
+  const P = (x: number, y: number): [number, number] => [bx + x * br, by + y * br];
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+
+  // Center rail
+  ctx.strokeStyle = "#37424A";
+  ctx.lineWidth = Math.max(1.2, br * 0.16);
+  let a = P(-0.70, 0.34), b = P(0.74, 0.10);
+  ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+
+  // Pedal plate helper (angled foot plate)
+  const drawPedal = (baseX: number, baseY: number, topX: number, topY: number) => {
+    ctx.strokeStyle = "#C9CDD2";
+    ctx.lineWidth = Math.max(1.4, br * 0.26);
+    const p0 = P(baseX, baseY), p1 = P(topX, topY);
+    ctx.beginPath(); ctx.moveTo(p0[0], p0[1]); ctx.lineTo(p1[0], p1[1]); ctx.stroke();
+    // dark edge line
+    ctx.strokeStyle = "#7A8087";
+    ctx.lineWidth = Math.max(0.6, br * 0.045);
+    ctx.beginPath(); ctx.moveTo(p0[0], p0[1]); ctx.lineTo(p1[0], p1[1]); ctx.stroke();
+  };
+  // Rear pedal (lower, less steep)
+  drawPedal(-0.34, 0.28, -0.02, -0.10);
+  // Front pedal (higher, steeper)
+  drawPedal(0.16, 0.20, 0.50, -0.30);
+
+  // Small support feet under rail
+  ctx.strokeStyle = "#37424A";
+  ctx.lineWidth = Math.max(0.8, br * 0.08);
+  for (const [fx, fy] of [[-0.55, 0.40], [0.55, 0.18]] as const) {
+    const f0 = P(fx, fy), f1 = P(fx, fy + 0.18);
+    ctx.beginPath(); ctx.moveTo(f0[0], f0[1]); ctx.lineTo(f1[0], f1[1]); ctx.stroke();
+  }
+
+  ctx.restore();
 }
 
 function drawSwimGoggles(
@@ -1394,6 +1550,44 @@ function drawRing(
     for (let i = 0; i < nBalls; i++) {
       const ang = (2 * Math.PI * i) / nBalls - Math.PI / 2;
       drawSwimGoggles(ctx, cx + r * Math.cos(ang), cy + r * Math.sin(ang), br);
+    }
+    return;
+  }
+
+  if (f.render?.kind === "pattern" && f.render.name === "start-block") {
+    const ro = r + ringW / 2;
+    const ri = r - ringW / 2;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, ro, 0, Math.PI * 2, false);
+    ctx.arc(cx, cy, ri, 0, Math.PI * 2, true);
+    ctx.fillStyle = "#D05A10";
+    ctx.fill("evenodd");
+    ctx.restore();
+    const br = ringW * 0.42;
+    const nBalls = Math.round((2 * Math.PI * r) / (br * 2.3));
+    for (let i = 0; i < nBalls; i++) {
+      const ang = (2 * Math.PI * i) / nBalls - Math.PI / 2;
+      drawStartBlock(ctx, cx + r * Math.cos(ang), cy + r * Math.sin(ang), br);
+    }
+    return;
+  }
+
+  if (f.render?.kind === "pattern" && f.render.name === "volley-ball") {
+    const ro = r + ringW / 2;
+    const ri = r - ringW / 2;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, ro, 0, Math.PI * 2, false);
+    ctx.arc(cx, cy, ri, 0, Math.PI * 2, true);
+    ctx.fillStyle = "#5B82AD";
+    ctx.fill("evenodd");
+    ctx.restore();
+    const br = ringW * 0.42;
+    const nBalls = Math.round((2 * Math.PI * r) / (br * 2.3));
+    for (let i = 0; i < nBalls; i++) {
+      const ang = (2 * Math.PI * i) / nBalls - Math.PI / 2;
+      drawVolleyBall(ctx, cx + r * Math.cos(ang), cy + r * Math.sin(ang), br);
     }
     return;
   }
@@ -2387,6 +2581,40 @@ function FrameThumb({
         drawSwimGoggles(ctx, cx + r * Math.cos(ang), cy + r * Math.sin(ang), br);
       }
       drawSwimGoggles(ctx, cx, cy, ri * 0.58);
+    } else if (frame.render?.kind === "pattern" && frame.render.name === "start-block") {
+      const ro = r + lw / 2;
+      const ri = r - lw / 2;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, ro, 0, Math.PI * 2, false);
+      ctx.arc(cx, cy, ri, 0, Math.PI * 2, true);
+      ctx.fillStyle = "#D05A10";
+      ctx.fill("evenodd");
+      ctx.restore();
+      const br = lw * 0.42;
+      const nBalls = Math.round((2 * Math.PI * r) / (br * 2.3));
+      for (let i = 0; i < nBalls; i++) {
+        const ang = (2 * Math.PI * i) / nBalls - Math.PI / 2;
+        drawStartBlock(ctx, cx + r * Math.cos(ang), cy + r * Math.sin(ang), br);
+      }
+      drawStartBlock(ctx, cx, cy, ri * 0.58);
+    } else if (frame.render?.kind === "pattern" && frame.render.name === "volley-ball") {
+      const ro = r + lw / 2;
+      const ri = r - lw / 2;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, ro, 0, Math.PI * 2, false);
+      ctx.arc(cx, cy, ri, 0, Math.PI * 2, true);
+      ctx.fillStyle = "#5B82AD";
+      ctx.fill("evenodd");
+      ctx.restore();
+      const br = lw * 0.42;
+      const nBalls = Math.round((2 * Math.PI * r) / (br * 2.3));
+      for (let i = 0; i < nBalls; i++) {
+        const ang = (2 * Math.PI * i) / nBalls - Math.PI / 2;
+        drawVolleyBall(ctx, cx + r * Math.cos(ang), cy + r * Math.sin(ang), br);
+      }
+      drawVolleyBall(ctx, cx, cy, ri * 0.58);
     } else if (frame.render?.kind === "pattern") {
       const tile = createPatternCanvas(frame.render.name);
       if (tile) {
