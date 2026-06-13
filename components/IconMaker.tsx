@@ -1914,7 +1914,7 @@ export default function IconMaker() {
     {
       const typeName = f.id.startsWith("pk-") ? f.id.slice(3) : null;
       const typePath = typeName ? POKEMON_TYPE_PATHS[typeName] : null;
-      if (f.emblem || typePath) {
+      if ((f.emblem || typePath) && f.category !== "country") {
         const er = Math.min(size * 0.1, ringW * 0.44);
         const ey = cy - (size / 2 - ringW * 0.5);
         ctx.beginPath();
@@ -2062,7 +2062,7 @@ export default function IconMaker() {
       {
         const typeName = f.id.startsWith("pk-") ? f.id.slice(3) : null;
         const typePath = typeName ? POKEMON_TYPE_PATHS[typeName] : null;
-        if (f.emblem || typePath) {
+        if ((f.emblem || typePath) && f.category !== "country") {
           const er = Math.min(SIZE * 0.1, ringW * 0.44);
           const ey = cy - (SIZE / 2 - ringW * 0.5);
           ctx.beginPath();
