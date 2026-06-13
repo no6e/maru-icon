@@ -389,76 +389,199 @@ function createPatternCanvas(name: string): HTMLCanvasElement | null {
       break;
     }
     case "concrete": {
-      c.width = 20;
-      c.height = 20;
-      ctx.fillStyle = "#9e9e9e";
-      ctx.fillRect(0, 0, 20, 20);
-      const spots = [
-        [2, 3, 3, "rgba(0,0,0,0.12)"],
-        [7, 1, 2, "rgba(255,255,255,0.1)"],
-        [12, 8, 4, "rgba(0,0,0,0.08)"],
-        [4, 14, 3, "rgba(255,255,255,0.08)"],
-        [16, 4, 2, "rgba(0,0,0,0.15)"],
-        [1, 17, 3, "rgba(255,255,255,0.12)"],
-        [10, 13, 2, "rgba(0,0,0,0.1)"],
-        [17, 15, 2, "rgba(255,255,255,0.07)"],
-      ];
-      spots.forEach(([x, y, s, col]) => {
-        ctx.fillStyle = col as string;
-        ctx.fillRect(x as number, y as number, s as number, s as number);
-      });
+      const TW = 200, TH = 200;
+      c.width = TW;
+      c.height = TH;
+
+      let prng = 0xa3b7c9d1;
+      const rng = () => {
+        prng ^= prng << 13;
+        prng ^= prng >>> 17;
+        prng ^= prng << 5;
+        return (prng >>> 0) / 0x100000000;
+      };
+
+      const makeNoise = (scale: number): Float32Array => {
+        const GW = Math.ceil(TW / scale) + 2;
+        const GH = Math.ceil(TH / scale) + 2;
+        const g = new Float32Array(GW * GH);
+        for (let i = 0; i < g.length; i++) g[i] = rng();
+        const out = new Float32Array(TW * TH);
+        for (let y = 0; y < TH; y++) {
+          for (let x = 0; x < TW; x++) {
+            const sx = x / scale, sy = y / scale;
+            const gx0 = Math.min(Math.floor(sx), GW - 2);
+            const gy0 = Math.min(Math.floor(sy), GH - 2);
+            const fx = sx - gx0, fy = sy - gy0;
+            const ux = fx * fx * (3 - 2 * fx), uy = fy * fy * (3 - 2 * fy);
+            out[y * TW + x] =
+              g[gy0 * GW + gx0] * (1 - ux) * (1 - uy) +
+              g[gy0 * GW + gx0 + 1] * ux * (1 - uy) +
+              g[(gy0 + 1) * GW + gx0] * (1 - ux) * uy +
+              g[(gy0 + 1) * GW + gx0 + 1] * ux * uy;
+          }
+        }
+        return out;
+      };
+
+      const n1 = makeNoise(70); // 大きなトーン変化
+      const n2 = makeNoise(22); // 中スケール
+      const n3 = makeNoise(7);  // 細粒
+
+      // 地肌：淡いクールグレー + ピクセル粒子ノイズ
+      const img = ctx.createImageData(TW, TH);
+      for (let y = 0; y < TH; y++) {
+        for (let x = 0; x < TW; x++) {
+          const ni = y * TW + x;
+          const v = 0.76 + n1[ni] * 0.07 + n2[ni] * 0.04 + n3[ni] * 0.025;
+          const grain = (rng() - 0.5) * 14; // ピクセルレベルの細粒感
+          const r = Math.round(Math.max(155, Math.min(228, v * 255 + grain)));
+          const g8 = Math.round(Math.max(155, Math.min(228, v * 255 + grain - 2)));
+          const b = Math.round(Math.max(160, Math.min(235, v * 255 + grain + 6)));
+          img.data[ni * 4] = r;
+          img.data[ni * 4 + 1] = g8;
+          img.data[ni * 4 + 2] = b;
+          img.data[ni * 4 + 3] = 255;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+
+      // 骨材（砂粒）: 極小 — 高密度
+      for (let i = 0; i < 900; i++) {
+        const px = rng() * TW, py = rng() * TH;
+        const pr = 0.3 + rng() * 1.2;
+        const dark = 0.12 + rng() * 0.42;
+        const lum = Math.round(dark * 255);
+        ctx.globalAlpha = 0.55 + rng() * 0.45;
+        ctx.fillStyle = `rgb(${lum},${lum},${lum + 8})`;
+        ctx.beginPath();
+        ctx.arc(px, py, pr, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 骨材: 中サイズ — 不規則な楕円形
+      for (let i = 0; i < 160; i++) {
+        const px = rng() * TW, py = rng() * TH;
+        const pr = 1.2 + rng() * 3.8;
+        const dark = 0.15 + rng() * 0.40;
+        const lum = Math.round(dark * 255);
+        ctx.globalAlpha = 0.45 + rng() * 0.45;
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.rotate(rng() * Math.PI);
+        ctx.scale(1, 0.35 + rng() * 0.55);
+        ctx.fillStyle = `rgb(${lum},${lum},${lum + 6})`;
+        ctx.beginPath();
+        ctx.arc(0, 0, pr, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // 骨材: 大粒 — 少数
+      for (let i = 0; i < 35; i++) {
+        const px = rng() * TW, py = rng() * TH;
+        const pr = 3.5 + rng() * 5.5;
+        const dark = 0.22 + rng() * 0.32;
+        const lum = Math.round(dark * 255);
+        ctx.globalAlpha = 0.35 + rng() * 0.40;
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.rotate(rng() * Math.PI);
+        ctx.scale(1, 0.3 + rng() * 0.5);
+        ctx.fillStyle = `rgb(${lum},${lum},${lum + 5})`;
+        ctx.beginPath();
+        ctx.arc(0, 0, pr, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      ctx.globalAlpha = 1;
       break;
     }
     case "alum": {
-      c.width = 2;
-      c.height = 40;
-      const alumStripes = [
-        [0, 2, "#c8c8c8"],
-        [2, 1, "#e8e8e8"],
-        [3, 2, "#b8b8b8"],
-        [5, 1, "#f0f0f0"],
-        [6, 3, "#c0c0c0"],
-        [9, 1, "#d8d8d8"],
-        [10, 2, "#a8a8a8"],
-        [12, 1, "#ececec"],
-        [13, 3, "#bebebe"],
-        [16, 2, "#d0d0d0"],
-        [18, 1, "#f4f4f4"],
-        [19, 2, "#b0b0b0"],
-        [21, 1, "#e4e4e4"],
-        [22, 3, "#c4c4c4"],
-        [25, 2, "#a4a4a4"],
-        [27, 1, "#e8e8e8"],
-        [28, 3, "#bcbcbc"],
-        [31, 1, "#f0f0f0"],
-        [32, 2, "#c8c8c8"],
-        [34, 1, "#d4d4d4"],
-        [35, 3, "#b4b4b4"],
-        [38, 2, "#e0e0e0"],
-      ] as [number, number, string][];
-      alumStripes.forEach(([y, h, color]) => {
-        ctx.fillStyle = color;
-        ctx.fillRect(0, y, 2, h);
-      });
+      // Brushed aluminum: fine horizontal streaks with noise-driven brightness
+      const TW = 2, TH = 400;
+      c.width = TW;
+      c.height = TH;
+
+      let prng = 0xc4d3e2f1;
+      const rng = () => {
+        prng ^= prng << 13;
+        prng ^= prng >>> 17;
+        prng ^= prng << 5;
+        return (prng >>> 0) / 0x100000000;
+      };
+
+      // Smooth base envelope
+      const NB = 22;
+      const baseG = new Float32Array(NB);
+      for (let i = 0; i < NB; i++) baseG[i] = rng();
+
+      const img = ctx.createImageData(TW, TH);
+      for (let y = 0; y < TH; y++) {
+        const fy = (y / TH) * (NB - 1);
+        const i0 = Math.min(Math.floor(fy), NB - 2);
+        const t = fy - i0;
+        const u = t * t * (3 - 2 * t);
+        const base = baseG[i0] * (1 - u) + baseG[i0 + 1] * u;
+
+        const streak = rng();
+        // Occasional sharp bright highlights (研磨跡)
+        const highlight = streak > 0.92 ? 0.30 : 0;
+        const v = 0.50 + base * 0.28 + (streak - 0.5) * 0.34 + highlight;
+
+        for (let x = 0; x < TW; x++) {
+          const ni = y * TW + x;
+          const lum = Math.round(Math.max(80, Math.min(255, v * 255)));
+          img.data[ni * 4] = lum;
+          img.data[ni * 4 + 1] = lum;
+          img.data[ni * 4 + 2] = Math.min(255, lum + 12); // わずかに青みがかったシルバー
+          img.data[ni * 4 + 3] = 255;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
       break;
     }
     case "iron": {
-      c.width = 6;
-      c.height = 6;
-      ctx.fillStyle = "#484848";
-      ctx.fillRect(0, 0, 6, 6);
-      ctx.fillStyle = "#606060";
-      ctx.fillRect(0, 0, 3, 1);
-      ctx.fillStyle = "#303030";
-      ctx.fillRect(3, 0, 3, 1);
-      ctx.fillStyle = "#383838";
-      ctx.fillRect(0, 2, 2, 2);
-      ctx.fillStyle = "#585858";
-      ctx.fillRect(2, 2, 4, 2);
-      ctx.fillStyle = "#505050";
-      ctx.fillRect(0, 4, 6, 1);
-      ctx.fillStyle = "rgba(255,255,255,0.05)";
-      ctx.fillRect(0, 0, 1, 6);
+      // Riveted iron plate (リベット鉄板)
+      const TW = 24, TH = 24;
+      c.width = TW;
+      c.height = TH;
+
+      // Dark plate base
+      ctx.fillStyle = "#242424";
+      ctx.fillRect(0, 0, TW, TH);
+
+      // Plate section grooves
+      ctx.fillStyle = "#141414";
+      ctx.fillRect(0, 0, TW, 1);
+      ctx.fillRect(0, 0, 1, TH);
+      ctx.fillRect(0, 12, TW, 1);
+      ctx.fillRect(12, 0, 1, TH);
+
+      // Subtle plate surface sheen
+      ctx.fillStyle = "rgba(255,255,255,0.03)";
+      ctx.fillRect(1, 1, 11, 11);
+      ctx.fillRect(13, 13, 11, 11);
+
+      // Rivets at each quadrant center
+      for (const [rx, ry] of [[6, 6], [18, 6], [6, 18], [18, 18]]) {
+        // Shadow
+        ctx.fillStyle = "#0e0e0e";
+        ctx.beginPath();
+        ctx.arc(rx + 0.8, ry + 0.8, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        // Body
+        ctx.fillStyle = "#383838";
+        ctx.beginPath();
+        ctx.arc(rx, ry, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        // Top highlight
+        ctx.fillStyle = "#5a5a5a";
+        ctx.beginPath();
+        ctx.arc(rx - 1, ry - 1, 1.6, 0, Math.PI * 2);
+        ctx.fill();
+      }
       break;
     }
     case "tire": {
