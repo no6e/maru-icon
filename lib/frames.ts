@@ -1,7 +1,7 @@
 export type FrameRender =
   | { kind: "conic"; stops: [number, string][] }
   | { kind: "segments"; colors: string[]; n: number }
-  | { kind: "pattern"; name: "wood" | "brick" | "tile" | "concrete" | "alum" | "iron" | "tire" | "glitter-pink" | "glitter-gold" | "glitter-silver" | "glitter-holo" | "soccer-ball" | "baseball-ball" };
+  | { kind: "pattern"; name: "wood" | "brick" | "tile" | "concrete" | "alum" | "iron" | "tire" | "glitter-pink" | "glitter-gold" | "glitter-silver" | "glitter-holo" | "soccer-ball" | "baseball-ball" | "basketball-ball" | "tennis-ball" };
 
 export type Frame = {
   id: string;
@@ -145,8 +145,8 @@ export const FRAMES: Frame[] = [
   // sports
   { id: "sp-soccer",     name: "サッカー", category: "sports", ring: "#2d7a2d", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "soccer-ball" } },
   { id: "sp-baseball",   name: "野球",     category: "sports", ring: "#C8A87A", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "baseball-ball" } },
-  { id: "sp-basketball", name: "バスケ",   category: "sports", ring: "#E87722", emblem: "🏀", emblemBg: "#B85510" },
-  { id: "sp-tennis",     name: "テニス",   category: "sports", ring: "#C9D600", emblem: "🎾", emblemBg: "#8A9500" },
+  { id: "sp-basketball", name: "バスケ",   category: "sports", ring: "#C0703C", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "basketball-ball" } },
+  { id: "sp-tennis",     name: "テニス",   category: "sports", ring: "#D7E84A", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "tennis-ball" } },
   { id: "sp-swimming",   name: "水泳",     category: "sports", ring: "#0077BE", emblem: "🏊", emblemBg: "#005590" },
   { id: "sp-athletics",  name: "陸上",     category: "sports", ring: "#D05A10", emblem: "🏃", emblemBg: "#A03A00" },
   { id: "sp-volleyball", name: "バレー",   category: "sports", ring: "#1560BD", emblem: "🏐", emblemBg: "#0A3A8A" },

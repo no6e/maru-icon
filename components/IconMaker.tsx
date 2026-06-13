@@ -756,6 +756,38 @@ function createPatternCanvas(name: string): HTMLCanvasElement | null {
       ctx.stroke();
       break;
     }
+    case "basketball-ball": {
+      c.width = 24; c.height = 24;
+      ctx.fillStyle = "#C0703C";
+      ctx.fillRect(0, 0, 24, 24);
+      ctx.beginPath();
+      ctx.arc(12, 12, 10, 0, Math.PI * 2);
+      ctx.fillStyle = "#C0703C";
+      ctx.fill();
+      ctx.strokeStyle = "#7A4521"; ctx.lineWidth = 0.9; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(2, 12); ctx.lineTo(22, 12); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(12, 2); ctx.lineTo(12, 22); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(7.5, 3); ctx.bezierCurveTo(4, 8, 4, 16, 7.5, 21); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(16.5, 3); ctx.bezierCurveTo(20, 8, 20, 16, 16.5, 21); ctx.stroke();
+      break;
+    }
+    case "tennis-ball": {
+      c.width = 24; c.height = 24;
+      ctx.fillStyle = "#D7E84A";
+      ctx.fillRect(0, 0, 24, 24);
+      ctx.beginPath();
+      ctx.arc(12, 12, 10, 0, Math.PI * 2);
+      ctx.fillStyle = "#D7E84A";
+      ctx.fill();
+      ctx.strokeStyle = "#3A3A3A"; ctx.lineWidth = 1; ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(7, 3); ctx.bezierCurveTo(10.5, 8, 10.5, 16, 7, 21); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(17, 3); ctx.bezierCurveTo(13.5, 8, 13.5, 16, 17, 21); ctx.stroke();
+      break;
+    }
     default:
       return null;
   }
@@ -858,6 +890,122 @@ function drawBaseballBall(
   ctx.arc(bx, by, br, 0, Math.PI * 2);
   ctx.strokeStyle = "#555";
   ctx.lineWidth = Math.max(0.8, br * 0.05);
+  ctx.stroke();
+}
+
+function drawBasketballBall(
+  ctx: CanvasRenderingContext2D,
+  bx: number,
+  by: number,
+  br: number
+) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(bx, by, br, 0, Math.PI * 2);
+  ctx.clip();
+
+  // Orange base
+  ctx.fillStyle = "#C0703C";
+  ctx.fill();
+  // Subtle highlight (upper-right)
+  const grad = ctx.createRadialGradient(
+    bx + br * 0.35, by - br * 0.35, br * 0.1,
+    bx, by, br * 1.1
+  );
+  grad.addColorStop(0, "rgba(255,255,255,0.18)");
+  grad.addColorStop(1, "rgba(0,0,0,0.10)");
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  const lineColor = "#7A4521";
+  ctx.strokeStyle = lineColor;
+  ctx.lineWidth = Math.max(0.9, br * 0.06);
+  ctx.lineCap = "round";
+
+  // Horizontal line
+  ctx.beginPath();
+  ctx.moveTo(bx - br, by);
+  ctx.lineTo(bx + br, by);
+  ctx.stroke();
+  // Vertical line
+  ctx.beginPath();
+  ctx.moveTo(bx, by - br);
+  ctx.lineTo(bx, by + br);
+  ctx.stroke();
+  // Left curved seam (bulges left)
+  ctx.beginPath();
+  ctx.moveTo(bx - br * 0.42, by - br);
+  ctx.bezierCurveTo(
+    bx - br * 0.72, by - br * 0.4,
+    bx - br * 0.72, by + br * 0.4,
+    bx - br * 0.42, by + br
+  );
+  ctx.stroke();
+  // Right curved seam (bulges right)
+  ctx.beginPath();
+  ctx.moveTo(bx + br * 0.42, by - br);
+  ctx.bezierCurveTo(
+    bx + br * 0.72, by - br * 0.4,
+    bx + br * 0.72, by + br * 0.4,
+    bx + br * 0.42, by + br
+  );
+  ctx.stroke();
+
+  ctx.restore();
+
+  // Ball outline
+  ctx.beginPath();
+  ctx.arc(bx, by, br, 0, Math.PI * 2);
+  ctx.strokeStyle = "#7A4521";
+  ctx.lineWidth = Math.max(0.8, br * 0.045);
+  ctx.stroke();
+}
+
+function drawTennisBall(
+  ctx: CanvasRenderingContext2D,
+  bx: number,
+  by: number,
+  br: number
+) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(bx, by, br, 0, Math.PI * 2);
+  ctx.clip();
+
+  // Yellow-green base
+  ctx.fillStyle = "#D7E84A";
+  ctx.fill();
+
+  ctx.strokeStyle = "#3A3A3A";
+  ctx.lineWidth = Math.max(1, br * 0.085);
+  ctx.lineCap = "round";
+
+  // Left seam: wide at top/bottom, curving inward toward center
+  ctx.beginPath();
+  ctx.moveTo(bx - br * 0.52, by - br * 0.92);
+  ctx.bezierCurveTo(
+    bx - br * 0.18, by - br * 0.32,
+    bx - br * 0.18, by + br * 0.32,
+    bx - br * 0.52, by + br * 0.92
+  );
+  ctx.stroke();
+  // Right seam: mirror
+  ctx.beginPath();
+  ctx.moveTo(bx + br * 0.52, by - br * 0.92);
+  ctx.bezierCurveTo(
+    bx + br * 0.18, by - br * 0.32,
+    bx + br * 0.18, by + br * 0.32,
+    bx + br * 0.52, by + br * 0.92
+  );
+  ctx.stroke();
+
+  ctx.restore();
+
+  // Ball outline
+  ctx.beginPath();
+  ctx.arc(bx, by, br, 0, Math.PI * 2);
+  ctx.strokeStyle = "#3A3A3A";
+  ctx.lineWidth = Math.max(1, br * 0.075);
   ctx.stroke();
 }
 
@@ -1111,6 +1259,44 @@ function drawRing(
     for (let i = 0; i < nBalls; i++) {
       const ang = (2 * Math.PI * i) / nBalls - Math.PI / 2;
       drawBaseballBall(ctx, cx + r * Math.cos(ang), cy + r * Math.sin(ang), br);
+    }
+    return;
+  }
+
+  if (f.render?.kind === "pattern" && f.render.name === "basketball-ball") {
+    const ro = r + ringW / 2;
+    const ri = r - ringW / 2;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, ro, 0, Math.PI * 2, false);
+    ctx.arc(cx, cy, ri, 0, Math.PI * 2, true);
+    ctx.fillStyle = "#C0703C";
+    ctx.fill("evenodd");
+    ctx.restore();
+    const br = ringW * 0.42;
+    const nBalls = Math.round((2 * Math.PI * r) / (br * 2.3));
+    for (let i = 0; i < nBalls; i++) {
+      const ang = (2 * Math.PI * i) / nBalls - Math.PI / 2;
+      drawBasketballBall(ctx, cx + r * Math.cos(ang), cy + r * Math.sin(ang), br);
+    }
+    return;
+  }
+
+  if (f.render?.kind === "pattern" && f.render.name === "tennis-ball") {
+    const ro = r + ringW / 2;
+    const ri = r - ringW / 2;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, ro, 0, Math.PI * 2, false);
+    ctx.arc(cx, cy, ri, 0, Math.PI * 2, true);
+    ctx.fillStyle = "#D7E84A";
+    ctx.fill("evenodd");
+    ctx.restore();
+    const br = ringW * 0.42;
+    const nBalls = Math.round((2 * Math.PI * r) / (br * 2.3));
+    for (let i = 0; i < nBalls; i++) {
+      const ang = (2 * Math.PI * i) / nBalls - Math.PI / 2;
+      drawTennisBall(ctx, cx + r * Math.cos(ang), cy + r * Math.sin(ang), br);
     }
     return;
   }
@@ -2053,6 +2239,40 @@ function FrameThumb({
         drawBaseballBall(ctx, cx + r * Math.cos(ang), cy + r * Math.sin(ang), br);
       }
       drawBaseballBall(ctx, cx, cy, ri * 0.58);
+    } else if (frame.render?.kind === "pattern" && frame.render.name === "basketball-ball") {
+      const ro = r + lw / 2;
+      const ri = r - lw / 2;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, ro, 0, Math.PI * 2, false);
+      ctx.arc(cx, cy, ri, 0, Math.PI * 2, true);
+      ctx.fillStyle = "#C0703C";
+      ctx.fill("evenodd");
+      ctx.restore();
+      const br = lw * 0.42;
+      const nBalls = Math.round((2 * Math.PI * r) / (br * 2.3));
+      for (let i = 0; i < nBalls; i++) {
+        const ang = (2 * Math.PI * i) / nBalls - Math.PI / 2;
+        drawBasketballBall(ctx, cx + r * Math.cos(ang), cy + r * Math.sin(ang), br);
+      }
+      drawBasketballBall(ctx, cx, cy, ri * 0.58);
+    } else if (frame.render?.kind === "pattern" && frame.render.name === "tennis-ball") {
+      const ro = r + lw / 2;
+      const ri = r - lw / 2;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, ro, 0, Math.PI * 2, false);
+      ctx.arc(cx, cy, ri, 0, Math.PI * 2, true);
+      ctx.fillStyle = "#D7E84A";
+      ctx.fill("evenodd");
+      ctx.restore();
+      const br = lw * 0.42;
+      const nBalls = Math.round((2 * Math.PI * r) / (br * 2.3));
+      for (let i = 0; i < nBalls; i++) {
+        const ang = (2 * Math.PI * i) / nBalls - Math.PI / 2;
+        drawTennisBall(ctx, cx + r * Math.cos(ang), cy + r * Math.sin(ang), br);
+      }
+      drawTennisBall(ctx, cx, cy, ri * 0.58);
     } else if (frame.render?.kind === "pattern") {
       const tile = createPatternCanvas(frame.render.name);
       if (tile) {
