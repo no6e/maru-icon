@@ -88,10 +88,6 @@ export const FRAMES: Frame[] = [
     render: { kind: "conic", stops: [[0,"#ff88aa"],[0.14,"#ffbb55"],[0.28,"#aaff88"],[0.42,"#55aaff"],[0.57,"#aa88ff"],[0.71,"#ff55cc"],[0.85,"#ff8844"],[1,"#ff88aa"]] },
   },
   {
-    id: "tx-stars", name: "星", category: "texture", ring: "#ffd700", emblem: "⭐", emblemBg: "#b8860b",
-    render: { kind: "segments", colors: ["#ffd700","#ffa500","#ffe44d","#e8960a"], n: 8 },
-  },
-  {
     id: "tx-vine", name: "ツタ", category: "texture", ring: "#2d6a27", emblem: "🌿", emblemBg: "#1a4a18",
     render: { kind: "segments", colors: ["#2d6a27","#1a4a18","#3d8a37","#234d1e"], n: 12 },
   },
