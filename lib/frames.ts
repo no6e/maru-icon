@@ -83,7 +83,7 @@ export const FRAMES: Frame[] = [
   { id: "tx-alum",     name: "アルミ",   category: "texture", ring: "#c0c0c0", emblem: "",   emblemBg: "transparent", render: { kind: "pattern", name: "alum" } },
   { id: "tx-iron",     name: "鉄",       category: "texture", ring: "#4a4a4a", emblem: "",   emblemBg: "transparent", render: { kind: "pattern", name: "iron" } },
   {
-    id: "tx-crystal", name: "クリスタル", category: "texture", ring: "#a8d8ff", emblem: "", emblemBg: "transparent",
+    id: "tx-crystal", name: "レインボー", category: "texture", ring: "#a8d8ff", emblem: "", emblemBg: "transparent",
     render: { kind: "conic", stops: [[0,"#ff88aa"],[0.14,"#ffbb55"],[0.28,"#aaff88"],[0.42,"#55aaff"],[0.57,"#aa88ff"],[0.71,"#ff55cc"],[0.85,"#ff8844"],[1,"#ff88aa"]] },
   },
   {
