@@ -1,12 +1,12 @@
 export type FrameRender =
   | { kind: "conic"; stops: [number, string][] }
   | { kind: "segments"; colors: string[]; n: number }
-  | { kind: "pattern"; name: "wood" | "brick" | "tile" | "concrete" | "alum" | "iron" | "tire" | "marble" };
+  | { kind: "pattern"; name: "wood" | "brick" | "tile" | "concrete" | "alum" | "iron" | "tire" | "marble" | "zebra" | "stripe" | "cow" | "leopard" | "tiger" | "glitter-pink" | "glitter-gold" | "glitter-silver" | "glitter-holo" };
 
 export type Frame = {
   id: string;
   name: string;
-  category: "all" | "simple" | "season" | "cute" | "texture" | "gradient";
+  category: "all" | "simple" | "season" | "cute" | "texture" | "gradient" | "vehicle" | "pokemon" | "country" | "sports" | "gal" | "glitter";
   ring: string;
   ring2?: string;
   splitDir?: "tb" | "lr";
@@ -39,7 +39,7 @@ export const FRAMES: Frame[] = [
   { id: "autumn",       name: "秋（もみじ）",    category: "season",  ring: "#f97316", emblem: "🍂", emblemBg: "#c2410c" },
   { id: "winter",       name: "冬（雪）",        category: "season",  ring: "#bae6fd", emblem: "❄",  emblemBg: "#0284c7" },
   // cute
-{ id: "star",         name: "スター",          category: "cute",    ring: "#fbbf24", emblem: "⭐", emblemBg: "#d97706" },
+  { id: "star",         name: "スター",          category: "cute",    ring: "#fbbf24", emblem: "⭐", emblemBg: "#d97706" },
   { id: "heart",        name: "ハート",          category: "cute",    ring: "#f43f5e", emblem: "♥",  emblemBg: "#e11d48" },
   { id: "crown",        name: "クラウン",        category: "cute",    ring: "#fcd34d", emblem: "♛",  emblemBg: "#b45309" },
   // gradient
@@ -76,12 +76,12 @@ export const FRAMES: Frame[] = [
     render: { kind: "conic", stops: [[0,"#c084fc"],[0.33,"#f0abfc"],[0.66,"#818cf8"],[1,"#c084fc"]] },
   },
   // texture
-  { id: "tx-wood",     name: "木",       category: "texture", ring: "#8B4513", emblem: "",   emblemBg: "transparent", render: { kind: "pattern", name: "wood" } },
-  { id: "tx-brick",    name: "レンガ",   category: "texture", ring: "#B85C38", emblem: "",   emblemBg: "transparent", render: { kind: "pattern", name: "brick" } },
-  { id: "tx-tile",     name: "タイル",   category: "texture", ring: "#90caf9", emblem: "",   emblemBg: "transparent", render: { kind: "pattern", name: "tile" } },
-  { id: "tx-concrete", name: "コンクリ", category: "texture", ring: "#9e9e9e", emblem: "",   emblemBg: "transparent", render: { kind: "pattern", name: "concrete" } },
-  { id: "tx-alum",     name: "アルミ",   category: "texture", ring: "#c0c0c0", emblem: "",   emblemBg: "transparent", render: { kind: "pattern", name: "alum" } },
-  { id: "tx-iron",     name: "鉄",       category: "texture", ring: "#4a4a4a", emblem: "",   emblemBg: "transparent", render: { kind: "pattern", name: "iron" } },
+  { id: "tx-wood",     name: "木",         category: "texture", ring: "#8B4513", emblem: "",   emblemBg: "transparent", render: { kind: "pattern", name: "wood" } },
+  { id: "tx-brick",    name: "レンガ",     category: "texture", ring: "#B85C38", emblem: "",   emblemBg: "transparent", render: { kind: "pattern", name: "brick" } },
+  { id: "tx-tile",     name: "タイル",     category: "texture", ring: "#90caf9", emblem: "",   emblemBg: "transparent", render: { kind: "pattern", name: "tile" } },
+  { id: "tx-concrete", name: "コンクリ",   category: "texture", ring: "#9e9e9e", emblem: "",   emblemBg: "transparent", render: { kind: "pattern", name: "concrete" } },
+  { id: "tx-alum",     name: "アルミ",     category: "texture", ring: "#c0c0c0", emblem: "",   emblemBg: "transparent", render: { kind: "pattern", name: "alum" } },
+  { id: "tx-iron",     name: "鉄",         category: "texture", ring: "#4a4a4a", emblem: "",   emblemBg: "transparent", render: { kind: "pattern", name: "iron" } },
   {
     id: "tx-crystal", name: "レインボー", category: "texture", ring: "#a8d8ff", emblem: "", emblemBg: "transparent",
     render: { kind: "conic", stops: [[0,"#ff88aa"],[0.14,"#ffbb55"],[0.28,"#aaff88"],[0.42,"#55aaff"],[0.57,"#aa88ff"],[0.71,"#ff55cc"],[0.85,"#ff8844"],[1,"#ff88aa"]] },
@@ -94,8 +94,75 @@ export const FRAMES: Frame[] = [
     id: "tx-vine", name: "ツタ", category: "texture", ring: "#2d6a27", emblem: "🌿", emblemBg: "#1a4a18",
     render: { kind: "segments", colors: ["#2d6a27","#1a4a18","#3d8a37","#234d1e"], n: 12 },
   },
-  { id: "tx-tire",   name: "タイヤ",     category: "texture", ring: "#1a1a1a", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "tire" } },
+  { id: "tx-tire",   name: "タイヤ",       category: "texture", ring: "#1a1a1a", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "tire" } },
   { id: "tx-marble", name: "ピンク大理石", category: "texture", ring: "#f2c8d8", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "marble" } },
+  // vehicle
+  { id: "vh-car",   name: "車",     category: "vehicle", ring: "#E4000F", emblem: "🚗", emblemBg: "#B00000" },
+  { id: "vh-train", name: "電車",   category: "vehicle", ring: "#1a5fa8", emblem: "🚆", emblemBg: "#0d3d7a" },
+  { id: "vh-plane", name: "飛行機", category: "vehicle", ring: "#87ceeb", emblem: "✈",  emblemBg: "#4a90d9" },
+  { id: "vh-bike",  name: "バイク", category: "vehicle", ring: "#2a2a2a", emblem: "🏍", emblemBg: "#1a1a1a" },
+  { id: "vh-ship",  name: "船",     category: "vehicle", ring: "#1a3a6e", emblem: "🚢", emblemBg: "#0d2550" },
+  { id: "vh-bus",   name: "バス",   category: "vehicle", ring: "#f5a623", emblem: "🚌", emblemBg: "#c07800" },
+  // pokemon
+  { id: "pk-normal",   name: "ノーマル",   category: "pokemon", ring: "#A8A878", emblem: "",   emblemBg: "#A8A878" },
+  { id: "pk-fire",     name: "ほのお",     category: "pokemon", ring: "#F08030", emblem: "🔥", emblemBg: "#C85020" },
+  { id: "pk-water",    name: "みず",       category: "pokemon", ring: "#6890F0", emblem: "💧", emblemBg: "#4060C0" },
+  { id: "pk-grass",    name: "くさ",       category: "pokemon", ring: "#78C850", emblem: "🌿", emblemBg: "#4A8A20" },
+  { id: "pk-electric", name: "でんき",     category: "pokemon", ring: "#F8D030", emblem: "⚡", emblemBg: "#C8A808" },
+  { id: "pk-ice",      name: "こおり",     category: "pokemon", ring: "#98D8D8", emblem: "❄",  emblemBg: "#60A8A8" },
+  { id: "pk-fighting", name: "かくとう",   category: "pokemon", ring: "#C03028", emblem: "👊", emblemBg: "#A01018" },
+  { id: "pk-poison",   name: "どく",       category: "pokemon", ring: "#A040A0", emblem: "☠",  emblemBg: "#802080" },
+  { id: "pk-ground",   name: "じめん",     category: "pokemon", ring: "#E0C068", emblem: "⛰",  emblemBg: "#B89038" },
+  { id: "pk-flying",   name: "ひこう",     category: "pokemon", ring: "#A890F0", emblem: "🕊",  emblemBg: "#7860C0" },
+  { id: "pk-psychic",  name: "エスパー",   category: "pokemon", ring: "#F85888", emblem: "🔮", emblemBg: "#C82858" },
+  { id: "pk-bug",      name: "むし",       category: "pokemon", ring: "#A8B820", emblem: "🐛", emblemBg: "#788808" },
+  { id: "pk-rock",     name: "いわ",       category: "pokemon", ring: "#B8A038", emblem: "🪨", emblemBg: "#887018" },
+  { id: "pk-ghost",    name: "ゴースト",   category: "pokemon", ring: "#705898", emblem: "👻", emblemBg: "#504878" },
+  { id: "pk-dragon",   name: "ドラゴン",   category: "pokemon", ring: "#7038F8", emblem: "🐉", emblemBg: "#5028C8" },
+  { id: "pk-dark",     name: "あく",       category: "pokemon", ring: "#705848", emblem: "🌙", emblemBg: "#504030" },
+  { id: "pk-steel",    name: "はがね",     category: "pokemon", ring: "#B8B8D0", emblem: "⚙",  emblemBg: "#888898" },
+  { id: "pk-fairy",    name: "フェアリー", category: "pokemon", ring: "#EE99AC", emblem: "✨", emblemBg: "#BE6980" },
+  // country
+  { id: "ct-japan",  name: "日本",         category: "country", ring: "#BC002D", emblem: "🇯🇵", emblemBg: "#BC002D" },
+  { id: "ct-usa",    name: "アメリカ",     category: "country", ring: "#3C3B6E", emblem: "🇺🇸", emblemBg: "#3C3B6E",
+    render: { kind: "segments", colors: ["#3C3B6E","#B22234","#FFFFFF"], n: 6 } },
+  { id: "ct-korea",  name: "韓国",         category: "country", ring: "#CD2E3A", emblem: "🇰🇷", emblemBg: "#CD2E3A",
+    render: { kind: "conic", stops: [[0,"#CD2E3A"],[0.5,"#003478"],[1,"#CD2E3A"]] } },
+  { id: "ct-china",  name: "中国",         category: "country", ring: "#DE2910", emblem: "🇨🇳", emblemBg: "#DE2910" },
+  { id: "ct-france", name: "フランス",     category: "country", ring: "#0055A4", emblem: "🇫🇷", emblemBg: "#0055A4",
+    render: { kind: "segments", colors: ["#0055A4","#FFFFFF","#EF4135"], n: 3 } },
+  { id: "ct-italy",  name: "イタリア",     category: "country", ring: "#009246", emblem: "🇮🇹", emblemBg: "#009246",
+    render: { kind: "segments", colors: ["#009246","#FFFFFF","#CE2B37"], n: 3 } },
+  { id: "ct-germany",name: "ドイツ",       category: "country", ring: "#000000", emblem: "🇩🇪", emblemBg: "#222222",
+    render: { kind: "segments", colors: ["#000000","#DD0000","#FFCE00"], n: 3 } },
+  { id: "ct-brazil", name: "ブラジル",     category: "country", ring: "#009C3B", emblem: "🇧🇷", emblemBg: "#007A2F",
+    render: { kind: "conic", stops: [[0,"#009C3B"],[0.25,"#FEDD00"],[0.5,"#009C3B"],[0.75,"#FEDD00"],[1,"#009C3B"]] } },
+  { id: "ct-uk",     name: "イギリス",     category: "country", ring: "#012169", emblem: "🇬🇧", emblemBg: "#012169",
+    render: { kind: "conic", stops: [[0,"#012169"],[0.2,"#C8102E"],[0.4,"#FFFFFF"],[0.6,"#C8102E"],[0.8,"#012169"],[1,"#012169"]] } },
+  { id: "ct-spain",  name: "スペイン",     category: "country", ring: "#AA151B", emblem: "🇪🇸", emblemBg: "#AA151B",
+    render: { kind: "segments", colors: ["#AA151B","#F1BF00","#AA151B"], n: 3 } },
+  { id: "ct-aus",    name: "オーストラリア", category: "country", ring: "#003087", emblem: "🇦🇺", emblemBg: "#003087",
+    render: { kind: "conic", stops: [[0,"#003087"],[0.33,"#CF142B"],[0.5,"#FFFFFF"],[0.66,"#003087"],[1,"#003087"]] } },
+  // sports
+  { id: "sp-soccer",     name: "サッカー", category: "sports", ring: "#2d7a2d", emblem: "⚽", emblemBg: "#1a5a1a" },
+  { id: "sp-baseball",   name: "野球",     category: "sports", ring: "#C8A87A", emblem: "⚾", emblemBg: "#8B6A3A" },
+  { id: "sp-basketball", name: "バスケ",   category: "sports", ring: "#E87722", emblem: "🏀", emblemBg: "#B85510" },
+  { id: "sp-tennis",     name: "テニス",   category: "sports", ring: "#C9D600", emblem: "🎾", emblemBg: "#8A9500" },
+  { id: "sp-swimming",   name: "水泳",     category: "sports", ring: "#0077BE", emblem: "🏊", emblemBg: "#005590" },
+  { id: "sp-athletics",  name: "陸上",     category: "sports", ring: "#D05A10", emblem: "🏃", emblemBg: "#A03A00" },
+  { id: "sp-volleyball", name: "バレー",   category: "sports", ring: "#1560BD", emblem: "🏐", emblemBg: "#0A3A8A" },
+  { id: "sp-golf",       name: "ゴルフ",   category: "sports", ring: "#4A8C2A", emblem: "⛳", emblemBg: "#2A6A0A" },
+  // gal
+  { id: "gl-zebra",   name: "ゼブラ",   category: "gal", ring: "#2a2a2a", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "zebra" } },
+  { id: "gl-stripe",  name: "ボーダー", category: "gal", ring: "#ff69b4", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "stripe" } },
+  { id: "gl-cow",     name: "ウシ柄",   category: "gal", ring: "#2a2a2a", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "cow" } },
+  { id: "gl-leopard", name: "ヒョウ柄", category: "gal", ring: "#C8A060", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "leopard" } },
+  { id: "gl-tiger",   name: "トラ柄",   category: "gal", ring: "#F08020", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "tiger" } },
+  // glitter
+  { id: "gt-pink",   name: "ピンク",     category: "glitter", ring: "#FF69B4", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "glitter-pink" } },
+  { id: "gt-gold",   name: "ゴールド",   category: "glitter", ring: "#FFD700", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "glitter-gold" } },
+  { id: "gt-silver", name: "シルバー",   category: "glitter", ring: "#C0C0C0", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "glitter-silver" } },
+  { id: "gt-holo",   name: "ホログラム", category: "glitter", ring: "#aa88ff", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "glitter-holo" } },
 ];
 
 export const CATEGORIES = [
@@ -105,6 +172,12 @@ export const CATEGORIES = [
   { id: "season",   label: "季節" },
   { id: "cute",     label: "かわいい" },
   { id: "texture",  label: "テクスチャ" },
+  { id: "vehicle",  label: "乗り物" },
+  { id: "pokemon",  label: "ポケモン" },
+  { id: "country",  label: "国" },
+  { id: "sports",   label: "スポーツ" },
+  { id: "gal",      label: "ギャル" },
+  { id: "glitter",  label: "グリッター" },
 ] as const;
 
 export function getFrame(id: string): Frame {

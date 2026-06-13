@@ -390,6 +390,150 @@ function createPatternCanvas(name: string): HTMLCanvasElement | null {
       ctx.beginPath(); ctx.moveTo(0, 16); ctx.lineTo(16, 0); ctx.stroke();
       break;
     }
+    case "zebra": {
+      const TW = 200, TH = 200;
+      c.width = TW; c.height = TH;
+      let prng = 0xD3A9B7C1;
+      const rng = () => { prng ^= prng << 13; prng ^= prng >>> 17; prng ^= prng << 5; return (prng >>> 0) / 0x100000000; };
+      const GW = 12, GH = 12;
+      const g = new Float32Array(GW * GH);
+      for (let i = 0; i < g.length; i++) g[i] = rng();
+      const noise = (nx: number, ny: number) => {
+        const ix = ((Math.floor(nx) % GW) + GW) % GW, iy = ((Math.floor(ny) % GH) + GH) % GH;
+        const fx = nx - Math.floor(nx), fy = ny - Math.floor(ny);
+        const ux = fx*fx*(3-2*fx), uy = fy*fy*(3-2*fy);
+        const s = g[iy*GW+ix], t = g[iy*GW+(ix+1)%GW], u = g[((iy+1)%GH)*GW+ix], v = g[((iy+1)%GH)*GW+(ix+1)%GW];
+        return s*(1-ux)*(1-uy) + t*ux*(1-uy) + u*(1-ux)*uy + v*ux*uy;
+      };
+      const img = ctx.createImageData(TW, TH);
+      for (let y = 0; y < TH; y++) {
+        for (let x = 0; x < TW; x++) {
+          const wobble = (noise(x/28, y/28) - 0.5) * 24;
+          const t = ((x - TW/2) * 0.7 + (y - TH/2) + wobble) / 14;
+          const dark = Math.floor(t) % 2 === 0;
+          const ni = y*TW+x;
+          img.data[ni*4]   = dark ? 18 : 242;
+          img.data[ni*4+1] = dark ? 18 : 242;
+          img.data[ni*4+2] = dark ? 18 : 242;
+          img.data[ni*4+3] = 255;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      break;
+    }
+    case "stripe": {
+      const TW = 200, TH = 200;
+      c.width = TW; c.height = TH;
+      const colors = ["#FF69B4","#FF85C8","#FFD700","#A855F7","#60A5FA","#34D399","#FB923C","#F472B6"];
+      const bh = Math.ceil(TH / colors.length);
+      colors.forEach((col, i) => { ctx.fillStyle = col; ctx.fillRect(0, i*bh, TW, bh); });
+      break;
+    }
+    case "cow": {
+      const TW = 200, TH = 200;
+      c.width = TW; c.height = TH;
+      ctx.fillStyle = "#F8F4EE";
+      ctx.fillRect(0, 0, TW, TH);
+      let prng = 0xB4C3D2E1;
+      const rng = () => { prng ^= prng << 13; prng ^= prng >>> 17; prng ^= prng << 5; return (prng >>> 0) / 0x100000000; };
+      const blobs: { x: number; y: number; rx: number; ry: number; rot: number }[] = [];
+      for (let i = 0; i < 14; i++) {
+        blobs.push({ x: rng()*TW, y: rng()*TH, rx: 12+rng()*22, ry: 8+rng()*18, rot: rng()*Math.PI });
+      }
+      ctx.fillStyle = "#1a1a1a";
+      for (const b of blobs) {
+        ctx.save();
+        ctx.translate(b.x, b.y); ctx.rotate(b.rot);
+        ctx.beginPath(); ctx.ellipse(0, 0, b.rx, b.ry, 0, 0, Math.PI*2);
+        ctx.fill();
+        ctx.restore();
+      }
+      break;
+    }
+    case "leopard": {
+      const TW = 200, TH = 200;
+      c.width = TW; c.height = TH;
+      ctx.fillStyle = "#C8A050";
+      ctx.fillRect(0, 0, TW, TH);
+      let prng = 0xE1D2C3B4;
+      const rng = () => { prng ^= prng << 13; prng ^= prng >>> 17; prng ^= prng << 5; return (prng >>> 0) / 0x100000000; };
+      for (let i = 0; i < 18; i++) {
+        const x = rng()*TW, y = rng()*TH;
+        const r = 7 + rng()*9;
+        const rot = rng()*Math.PI;
+        // outer dark ring
+        ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+        ctx.strokeStyle = "#3A2000"; ctx.lineWidth = 3.5;
+        ctx.beginPath(); ctx.ellipse(0, 0, r, r*0.65, 0, 0, Math.PI*2); ctx.stroke();
+        // inner light spot
+        ctx.fillStyle = "#E8B860";
+        ctx.beginPath(); ctx.ellipse(0, 0, r*0.5, r*0.35, 0, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
+      break;
+    }
+    case "tiger": {
+      const TW = 200, TH = 200;
+      c.width = TW; c.height = TH;
+      ctx.fillStyle = "#E87820";
+      ctx.fillRect(0, 0, TW, TH);
+      let prng = 0xC1B2A394;
+      const rng = () => { prng ^= prng << 13; prng ^= prng >>> 17; prng ^= prng << 5; return (prng >>> 0) / 0x100000000; };
+      ctx.strokeStyle = "#1a1008";
+      for (let i = 0; i < 10; i++) {
+        const cy = rng()*TH;
+        const amp = 12 + rng()*20;
+        const freq = 0.03 + rng()*0.04;
+        const w = 6 + rng()*10;
+        ctx.lineWidth = w;
+        ctx.beginPath();
+        for (let x = 0; x <= TW; x += 2) {
+          const y = cy + Math.sin(x*freq*Math.PI*2)*amp + Math.sin(x*freq*1.7*Math.PI*2)*amp*0.4;
+          if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+      break;
+    }
+    case "glitter-pink":
+    case "glitter-gold":
+    case "glitter-silver":
+    case "glitter-holo": {
+      const TW = 200, TH = 200;
+      c.width = TW; c.height = TH;
+      const baseCols: Record<string, string> = {
+        "glitter-pink": "#FFE0F0", "glitter-gold": "#FFF8D0",
+        "glitter-silver": "#F0F0F4", "glitter-holo": "#F0EEFF",
+      };
+      ctx.fillStyle = baseCols[name];
+      ctx.fillRect(0, 0, TW, TH);
+      let prng = 0xF1E2D3C4;
+      const rng = () => { prng ^= prng << 13; prng ^= prng >>> 17; prng ^= prng << 5; return (prng >>> 0) / 0x100000000; };
+      const sparkleColors: Record<string, string[]> = {
+        "glitter-pink":   ["#FF69B4","#FF1493","#FFB6D9","#FFFFFF","#FF85C8"],
+        "glitter-gold":   ["#FFD700","#FFA500","#FFE55C","#FFFFFF","#D4AF37"],
+        "glitter-silver": ["#C0C0C0","#A8A8A8","#E8E8E8","#FFFFFF","#888888"],
+        "glitter-holo":   ["#FF69B4","#00CED1","#FFD700","#FFFFFF","#AA88FF","#FF6347","#7CFC00"],
+      };
+      const cols = sparkleColors[name];
+      for (let i = 0; i < 220; i++) {
+        const x = rng()*TW, y = rng()*TH;
+        const sz = 0.8 + rng()*2.8;
+        const col = cols[Math.floor(rng()*cols.length)];
+        ctx.fillStyle = col;
+        ctx.globalAlpha = 0.5 + rng()*0.5;
+        ctx.beginPath(); ctx.arc(x, y, sz, 0, Math.PI*2); ctx.fill();
+        // cross sparkle on larger dots
+        if (sz > 2) {
+          ctx.lineWidth = 0.6;
+          ctx.strokeStyle = col;
+          ctx.beginPath(); ctx.moveTo(x-sz*2, y); ctx.lineTo(x+sz*2, y); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(x, y-sz*2); ctx.lineTo(x, y+sz*2); ctx.stroke();
+        }
+      }
+      ctx.globalAlpha = 1;
+      break;
+    }
     default: return null;
   }
   return c;
