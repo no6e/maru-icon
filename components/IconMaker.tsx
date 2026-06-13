@@ -1046,7 +1046,7 @@ export default function IconMaker() {
           {/* フィルター */}
           <div className="px-5 pb-3 border-t border-gray-100 pt-3">
             <p className="text-xs text-gray-400 mb-2">フィルター</p>
-            <div className="flex gap-2 overflow-x-auto pb-1">
+            <div className="flex gap-2 flex-nowrap overflow-x-auto pb-1 md:flex-wrap md:overflow-visible md:pb-0">
               {FILTERS.map((fi) => (
                 <button
                   key={fi.id}
