@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState, useCallback, useEffect } from "react";
-import { FRAMES, CATEGORIES, getFrame, type Frame } from "@/lib/frames";
+import { CATEGORIES, FRAMES, getFrame, type Frame } from "@/lib/frames";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const BG_COLORS = [
   { color: "#ffffff", label: "白" },
@@ -14,41 +14,122 @@ const BG_COLORS = [
 ];
 
 const FILTERS = [
-  { id: "none",    name: "なし",       css: "" },
-  { id: "sepia",   name: "セピア",     css: "sepia(0.9)" },
-  { id: "mono",    name: "モノクロ",   css: "grayscale(1)" },
-  { id: "vintage", name: "ヴィンテージ", css: "sepia(0.45) contrast(0.85) brightness(1.1) saturate(0.75)" },
-  { id: "warm",    name: "ウォーム",   css: "sepia(0.3) saturate(1.5) brightness(1.05)" },
-  { id: "cool",    name: "クール",     css: "saturate(0.85) brightness(1.08) hue-rotate(15deg)" },
-  { id: "fade",    name: "フェード",   css: "contrast(0.8) brightness(1.2) saturate(0.6)" },
-  { id: "vivid",   name: "ビビッド",   css: "saturate(2) contrast(1.1)" },
-  { id: "drama",   name: "ドラマ",     css: "contrast(1.5) brightness(0.85) saturate(0.9)" },
+  { id: "none", name: "なし", css: "" },
+  { id: "sepia", name: "セピア", css: "sepia(0.9)" },
+  { id: "mono", name: "モノクロ", css: "grayscale(1)" },
+  {
+    id: "vintage",
+    name: "ヴィンテージ",
+    css: "sepia(0.45) contrast(0.85) brightness(1.1) saturate(0.75)",
+  },
+  {
+    id: "warm",
+    name: "ウォーム",
+    css: "sepia(0.3) saturate(1.5) brightness(1.05)",
+  },
+  {
+    id: "cool",
+    name: "クール",
+    css: "saturate(0.85) brightness(1.08) hue-rotate(15deg)",
+  },
+  {
+    id: "fade",
+    name: "フェード",
+    css: "contrast(0.8) brightness(1.2) saturate(0.6)",
+  },
+  { id: "vivid", name: "ビビッド", css: "saturate(2) contrast(1.1)" },
+  {
+    id: "drama",
+    name: "ドラマ",
+    css: "contrast(1.5) brightness(0.85) saturate(0.9)",
+  },
 ];
 
 const RING_PRESETS = [
-  "#E4000F", "#f97316", "#fbbf24", "#34d399",
-  "#60a5fa", "#7c3aed", "#f472b6", "#1a1a1a",
-  "#ffffff", "#9ca3af",
+  "#E4000F",
+  "#f97316",
+  "#fbbf24",
+  "#34d399",
+  "#60a5fa",
+  "#7c3aed",
+  "#f472b6",
+  "#1a1a1a",
+  "#ffffff",
+  "#9ca3af",
 ];
 
+// SVG paths (100×100 viewBox, center 50,50) for each Pokemon type icon
+const POKEMON_TYPE_PATHS: Record<string, string> = {
+  normal:   "M88,50 A38,38 0 1 0 12,50 A38,38 0 1 0 88,50 Z M72,50 A22,22 0 1 0 28,50 A22,22 0 1 0 72,50 Z",
+  fire:     "M50,8 C55,18 66,18 64,32 C74,24 72,40 65,48 C76,40 80,54 72,64 C66,74 56,78 50,80 C44,78 34,74 28,64 C20,54 24,40 35,48 C28,40 26,24 36,32 C34,18 45,18 50,8 Z",
+  water:    "M50,8 C50,8 18,46 18,62 A32,32 0 0 0 82,62 C82,46 50,8 50,8 Z",
+  electric: "M62,8 L32,52 L52,52 L38,92 L72,46 L50,46 Z",
+  grass:    "M50,10 C74,10 86,28 86,48 C86,66 74,80 60,86 L50,92 L40,86 C26,80 14,66 14,48 C14,28 26,10 50,10 Z",
+  ice:      "M50,10 L59,34 L85,30 L68,50 L85,70 L59,66 L50,90 L41,66 L15,70 L32,50 L15,30 L41,34 Z",
+  fighting: "M14,44 C14,36 20,28 30,28 L44,28 C50,28 52,35 52,44 L52,74 C52,80 50,88 44,88 L30,88 C20,88 14,82 14,74 Z M52,44 C52,35 54,28 60,28 L70,28 C80,28 86,36 86,44 L86,74 C86,82 80,88 70,88 L58,88 C54,88 52,80 52,74 Z",
+  poison:   "M50,15 C65,15 78,26 78,42 C78,53 72,62 62,65 L64,76 C65,80 62,84 58,84 L53,84 L50,90 L47,84 L42,84 C38,84 35,80 36,76 L38,65 C28,62 22,53 22,42 C22,26 35,15 50,15 Z M45,42 A7,7 0 1 0 31,42 A7,7 0 1 0 45,42 Z M69,42 A7,7 0 1 0 55,42 A7,7 0 1 0 69,42 Z",
+  ground:   "M10,38 C22,28 38,48 50,38 C62,28 78,48 90,38 L90,52 C78,62 62,42 50,52 C38,62 22,42 10,52 Z M10,60 C22,50 38,70 50,60 C62,50 78,70 90,60 L90,74 C78,84 62,64 50,74 C38,84 22,64 10,74 Z",
+  flying:   "M50,55 C36,34 12,28 8,44 C4,57 26,66 50,55 Z M50,55 C64,34 88,28 92,44 C96,57 74,66 50,55 Z M46,56 L44,75 L50,68 L56,75 L54,56 Z",
+  psychic:  "M50,8 L54,28 L72,18 L64,36 L84,32 L72,46 L90,50 L72,54 L84,68 L64,64 L72,82 L54,72 L50,92 L46,72 L28,82 L36,64 L16,68 L28,54 L10,50 L28,46 L16,32 L36,36 L28,18 L46,28 Z",
+  bug:      "M50,40 C65,40 75,51 75,64 C75,77 65,87 50,87 C35,87 25,77 25,64 C25,51 35,40 50,40 Z M43,64 A7,7 0 1 0 29,64 A7,7 0 1 0 43,64 Z M71,64 A7,7 0 1 0 57,64 A7,7 0 1 0 71,64 Z M36,42 L24,14 L28,10 L40,38 Z M64,42 L76,14 L72,10 L60,38 Z",
+  rock:     "M18,78 L38,35 L52,57 L64,28 L82,78 Z",
+  ghost:    "M24,44 C24,28 36,18 50,18 C64,18 76,28 76,44 L76,80 L67,72 L60,80 L53,72 L47,80 L40,72 L33,80 L24,72 Z M45,44 A7,7 0 1 0 31,44 A7,7 0 1 0 45,44 Z M69,44 A7,7 0 1 0 55,44 A7,7 0 1 0 69,44 Z",
+  dragon:   "M20,65 C20,40 36,18 58,22 C78,26 90,46 86,68 C82,84 68,92 54,89 C36,86 20,78 20,65 Z M58,22 C63,9 78,7 82,18 L76,22 C72,14 63,14 58,22 Z",
+  dark:     "M50,18 C74,18 88,36 88,56 C88,74 74,88 57,90 L50,94 L43,90 C26,88 12,74 12,56 C12,36 26,18 50,18 Z M36,46 L43,54 L36,62 L29,54 Z M64,46 L71,54 L64,62 L57,54 Z M36,72 C40,80 46,84 50,84 C54,84 60,80 64,72 C60,68 54,70 50,70 C46,70 40,68 36,72 Z",
+  steel:    "M50,12 L75,27 L75,57 L50,72 L25,57 L25,27 Z M50,22 L67,32 L67,52 L50,62 L33,52 L33,32 Z",
+  fairy:    "M50,10 L57,33 L78,22 L67,43 L90,50 L67,57 L78,78 L57,67 L50,90 L43,67 L22,78 L33,57 L10,50 L33,43 L22,22 L43,33 Z",
+};
+
+function drawTypeIcon(
+  ctx: CanvasRenderingContext2D,
+  pathStr: string,
+  cx: number,
+  cy: number,
+  r: number,
+  color = "#ffffff"
+) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(r / 50, r / 50);
+  ctx.translate(-50, -50);
+  const p = new Path2D(pathStr);
+  ctx.fillStyle = color;
+  ctx.fill(p, "evenodd");
+  ctx.restore();
+}
+
+const patternTileCache = new Map<string, HTMLCanvasElement>();
+
 function createPatternCanvas(name: string): HTMLCanvasElement | null {
+  const hit = patternTileCache.get(name);
+  if (hit) return hit;
+
   const c = document.createElement("canvas");
   const ctx = c.getContext("2d");
   if (!ctx) return null;
 
   switch (name) {
     case "wood": {
-      const TW = 200, TH = 60;
-      c.width = TW; c.height = TH;
+      const TW = 200,
+        TH = 60;
+      c.width = TW;
+      c.height = TH;
 
-      let prng = 0xF1D2C3B4;
+      let prng = 0xf1d2c3b4;
       const rng = () => {
-        prng ^= prng << 13; prng ^= prng >>> 17; prng ^= prng << 5;
+        prng ^= prng << 13;
+        prng ^= prng >>> 17;
+        prng ^= prng << 5;
         return (prng >>> 0) / 0x100000000;
       };
 
       // Smooth value noise (bilinear interpolated random grid)
-      const makeNoise = (scale: number, amp: number, ox = 0, oy = 0): Float32Array => {
+      const makeNoise = (
+        scale: number,
+        amp: number,
+        ox = 0,
+        oy = 0
+      ): Float32Array => {
         const GW = Math.ceil(TW / scale) + 2;
         const GH = Math.ceil(TH / scale) + 2;
         const g = new Float32Array(GW * GH);
@@ -56,24 +137,33 @@ function createPatternCanvas(name: string): HTMLCanvasElement | null {
         const out = new Float32Array(TW * TH);
         for (let y = 0; y < TH; y++) {
           for (let x = 0; x < TW; x++) {
-            const sx = (x + ox) / scale, sy = (y + oy) / scale;
-            const gx0 = Math.min(Math.floor(sx), GW - 2), gy0 = Math.min(Math.floor(sy), GH - 2);
-            const fx = sx - gx0, fy = sy - gy0;
-            const ux = fx * fx * (3 - 2 * fx), uy = fy * fy * (3 - 2 * fy);
-            out[y * TW + x] = (
-              (g[gy0*GW+gx0]*(1-ux) + g[gy0*GW+gx0+1]*ux) * (1-uy) +
-              (g[(gy0+1)*GW+gx0]*(1-ux) + g[(gy0+1)*GW+gx0+1]*ux) * uy
-            ) * 2 * amp - amp;
+            const sx = (x + ox) / scale,
+              sy = (y + oy) / scale;
+            const gx0 = Math.min(Math.floor(sx), GW - 2),
+              gy0 = Math.min(Math.floor(sy), GH - 2);
+            const fx = sx - gx0,
+              fy = sy - gy0;
+            const ux = fx * fx * (3 - 2 * fx),
+              uy = fy * fy * (3 - 2 * fy);
+            out[y * TW + x] =
+              ((g[gy0 * GW + gx0] * (1 - ux) + g[gy0 * GW + gx0 + 1] * ux) *
+                (1 - uy) +
+                (g[(gy0 + 1) * GW + gx0] * (1 - ux) +
+                  g[(gy0 + 1) * GW + gx0 + 1] * ux) *
+                  uy) *
+                2 *
+                amp -
+              amp;
           }
         }
         return out;
       };
 
       // Organic flowing grain — no board joints, one prominent knot
-      const disp1 = makeNoise(55, 6);    // large bow ±6px
-      const disp2 = makeNoise(20, 3);    // medium ±3px
-      const disp3 = makeNoise(8, 1.2);   // fine ±1.2px
-      const colorN = makeNoise(40, 1.3, 80, 40);  // amber tonal range
+      const disp1 = makeNoise(55, 6); // large bow ±6px
+      const disp2 = makeNoise(20, 3); // medium ±3px
+      const disp3 = makeNoise(8, 1.2); // fine ±1.2px
+      const colorN = makeNoise(40, 1.3, 80, 40); // amber tonal range
 
       ctx.fillStyle = "#BA8840";
       ctx.fillRect(0, 0, TW, TH);
@@ -88,15 +178,17 @@ function createPatternCanvas(name: string): HTMLCanvasElement | null {
           const ni = y * TW + x;
 
           // Knot: dark center + light halo + strong grain wrap
-          let kDisp = 0, kDark = 0;
+          let kDisp = 0,
+            kDark = 0;
           for (const k of knots) {
-            const dx = x - k.x, dy = y - k.y;
+            const dx = x - k.x,
+              dy = y - k.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
             const kf = Math.max(0, 1 - dist / (k.r * 4.5));
             if (kf > 0) {
               kDisp += kf * k.r * Math.sin(Math.atan2(dy, dx)) * 3.0;
               if (dist < k.r) {
-                kDark += (1 - dist / k.r) * 95;       // very dark center
+                kDark += (1 - dist / k.r) * 95; // very dark center
               } else if (dist < k.r * 2) {
                 kDark -= Math.max(0, 1 - (dist - k.r) / k.r) * 18; // light halo
               }
@@ -105,7 +197,7 @@ function createPatternCanvas(name: string): HTMLCanvasElement | null {
 
           const gY = y + disp1[ni] + disp2[ni] + disp3[ni] + kDisp;
           const period = 5;
-          const t = ((gY % period) + period) % period / period;
+          const t = (((gY % period) + period) % period) / period;
 
           // Earlywood / latewood — moderate contrast
           const late = t > 0.58 ? (t - 0.58) / 0.42 : 0;
@@ -117,10 +209,19 @@ function createPatternCanvas(name: string): HTMLCanvasElement | null {
 
           // Warm amber-honey brown
           const dark = grain + boundary + kDark;
-          d[ni*4]   = Math.max(5, Math.min(255, (190 + cv * 24 - dark + fine) | 0));
-          d[ni*4+1] = Math.max(3, Math.min(255, (145 + cv * 18 - dark * 0.83 + fine) | 0));
-          d[ni*4+2] = Math.max(0, Math.min(210, (65  + cv * 9  - dark * 0.52 + fine) | 0));
-          d[ni*4+3] = 255;
+          d[ni * 4] = Math.max(
+            5,
+            Math.min(255, (190 + cv * 24 - dark + fine) | 0)
+          );
+          d[ni * 4 + 1] = Math.max(
+            3,
+            Math.min(255, (145 + cv * 18 - dark * 0.83 + fine) | 0)
+          );
+          d[ni * 4 + 2] = Math.max(
+            0,
+            Math.min(210, (65 + cv * 9 - dark * 0.52 + fine) | 0)
+          );
+          d[ni * 4 + 3] = 255;
         }
       }
 
@@ -129,17 +230,26 @@ function createPatternCanvas(name: string): HTMLCanvasElement | null {
     }
     case "brick": {
       // 4-row tile with per-pixel smooth noise for natural irregularity
-      const TW = 120, TH = 44;
-      c.width = TW; c.height = TH;
+      const TW = 120,
+        TH = 44;
+      c.width = TW;
+      c.height = TH;
 
-      let prng = 0xD3B07A5F;
+      let prng = 0xd3b07a5f;
       const rng = () => {
-        prng ^= prng << 13; prng ^= prng >>> 17; prng ^= prng << 5;
+        prng ^= prng << 13;
+        prng ^= prng >>> 17;
+        prng ^= prng << 5;
         return (prng >>> 0) / 0x100000000;
       };
 
       // Pre-generate smooth value noise (bilinear-interpolated random grid)
-      const makeNoise = (scale: number, amp: number, ox = 0, oy = 0): Float32Array => {
+      const makeNoise = (
+        scale: number,
+        amp: number,
+        ox = 0,
+        oy = 0
+      ): Float32Array => {
         const GW = Math.ceil(TW / scale) + 2;
         const GH = Math.ceil(TH / scale) + 2;
         const g = new Float32Array(GW * GH);
@@ -147,22 +257,31 @@ function createPatternCanvas(name: string): HTMLCanvasElement | null {
         const out = new Float32Array(TW * TH);
         for (let y = 0; y < TH; y++) {
           for (let x = 0; x < TW; x++) {
-            const sx = (x + ox) / scale, sy = (y + oy) / scale;
-            const gx0 = Math.floor(sx), gy0 = Math.floor(sy);
-            const fx = sx - gx0, fy = sy - gy0;
-            const ux = fx * fx * (3 - 2 * fx), uy = fy * fy * (3 - 2 * fy);
-            out[y * TW + x] = (
-              (g[gy0*GW+gx0]*(1-ux) + g[gy0*GW+gx0+1]*ux) * (1-uy) +
-              (g[(gy0+1)*GW+gx0]*(1-ux) + g[(gy0+1)*GW+gx0+1]*ux) * uy
-            ) * 2 * amp - amp;
+            const sx = (x + ox) / scale,
+              sy = (y + oy) / scale;
+            const gx0 = Math.floor(sx),
+              gy0 = Math.floor(sy);
+            const fx = sx - gx0,
+              fy = sy - gy0;
+            const ux = fx * fx * (3 - 2 * fx),
+              uy = fy * fy * (3 - 2 * fy);
+            out[y * TW + x] =
+              ((g[gy0 * GW + gx0] * (1 - ux) + g[gy0 * GW + gx0 + 1] * ux) *
+                (1 - uy) +
+                (g[(gy0 + 1) * GW + gx0] * (1 - ux) +
+                  g[(gy0 + 1) * GW + gx0 + 1] * ux) *
+                  uy) *
+                2 *
+                amp -
+              amp;
           }
         }
         return out;
       };
 
       // Two octaves of smooth noise for surface variation
-      const largeN = makeNoise(14, 38);        // big tonal blobs ±38
-      const medN   = makeNoise(5, 20, 47, 31); // medium variation ±20
+      const largeN = makeNoise(14, 38); // big tonal blobs ±38
+      const medN = makeNoise(5, 20, 47, 31); // medium variation ±20
 
       // Light cream mortar
       ctx.fillStyle = "#c8b8a8";
@@ -175,9 +294,12 @@ function createPatternCanvas(name: string): HTMLCanvasElement | null {
       const mortarN = makeNoise(4, 10, 90, 60);
       for (let i = 0; i < TW * TH; i++) {
         const n = mortarN[i] | 0;
-        d[i*4]   = Math.max(0, Math.min(255, d[i*4]   + n));
-        d[i*4+1] = Math.max(0, Math.min(255, d[i*4+1] + n));
-        d[i*4+2] = Math.max(0, Math.min(255, d[i*4+2] + ((n * 0.9) | 0)));
+        d[i * 4] = Math.max(0, Math.min(255, d[i * 4] + n));
+        d[i * 4 + 1] = Math.max(0, Math.min(255, d[i * 4 + 1] + n));
+        d[i * 4 + 2] = Math.max(
+          0,
+          Math.min(255, d[i * 4 + 2] + ((n * 0.9) | 0))
+        );
       }
 
       // Pale terracotta / salmon tones — light and stylish
@@ -193,7 +315,8 @@ function createPatternCanvas(name: string): HTMLCanvasElement | null {
       ];
 
       // Layout: 4 rows, each row has 4 bricks (30px unit), stagger odd rows by 15px
-      const BW = 28, BH = 9;
+      const BW = 28,
+        BH = 9;
       for (let row = 0; row < 4; row++) {
         const by = row * 11 + 1;
         const xOff = row % 2 === 1 ? -15 : 0;
@@ -205,33 +328,39 @@ function createPatternCanvas(name: string): HTMLCanvasElement | null {
           const tint = (rng() * 44 - 22) | 0;
           const br = Math.max(140, Math.min(255, r0 + tint));
           const bg_ = Math.max(100, Math.min(240, g0 + ((tint * 0.7) | 0)));
-          const bb  = Math.max(70,  Math.min(220, b0 + ((tint * 0.55) | 0)));
+          const bb = Math.max(70, Math.min(220, b0 + ((tint * 0.55) | 0)));
 
           for (let dy = 0; dy < BH; dy++) {
             for (let dx = 0; dx < BW; dx++) {
-              const px = ((bx + dx) % TW + TW) % TW;
+              const px = (((bx + dx) % TW) + TW) % TW;
               const py = by + dy;
               if (py < 0 || py >= TH) continue;
 
               const ni = py * TW + px;
               // Smooth noise + fine grain
-              const smooth = ((largeN[ni] * 0.7 + medN[ni]) ) | 0;
-              const fine   = (rng() * 22 - 11) | 0;
+              const smooth = (largeN[ni] * 0.7 + medN[ni]) | 0;
+              const fine = (rng() * 22 - 11) | 0;
               // Horizontal layering (light kiln lines)
-              const grain  = (Math.sin(dx * 0.4 + ci * 1.6) * 7) | 0;
+              const grain = (Math.sin(dx * 0.4 + ci * 1.6) * 7) | 0;
               // Soft edge depth
               const ex = Math.min(dx, BW - 1 - dx);
               const ey = Math.min(dy, BH - 1 - dy);
-              const edgeDark = Math.min(ex, ey) < 1 ? 22 : Math.min(ex, ey) < 2 ? 8 : 0;
-              const bottomDark = dy >= BH - 2 ? (BH - 1 - dy) === 0 ? 22 : 10 : 0;
-              const topLight   = dy === 1 ? 10 : 0;
+              const edgeDark =
+                Math.min(ex, ey) < 1 ? 22 : Math.min(ex, ey) < 2 ? 8 : 0;
+              const bottomDark =
+                dy >= BH - 2 ? (BH - 1 - dy === 0 ? 22 : 10) : 0;
+              const topLight = dy === 1 ? 10 : 0;
 
-              const delta = smooth + fine + grain + topLight - edgeDark - bottomDark;
+              const delta =
+                smooth + fine + grain + topLight - edgeDark - bottomDark;
               const pi = ni * 4;
-              d[pi]   = Math.max(120, Math.min(255, br  + delta));
-              d[pi+1] = Math.max(90,  Math.min(250, bg_ + ((delta * 0.75) | 0)));
-              d[pi+2] = Math.max(60,  Math.min(230, bb  + ((delta * 0.6)  | 0)));
-              d[pi+3] = 255;
+              d[pi] = Math.max(120, Math.min(255, br + delta));
+              d[pi + 1] = Math.max(
+                90,
+                Math.min(250, bg_ + ((delta * 0.75) | 0))
+              );
+              d[pi + 2] = Math.max(60, Math.min(230, bb + ((delta * 0.6) | 0)));
+              d[pi + 3] = 255;
             }
           }
         }
@@ -241,11 +370,17 @@ function createPatternCanvas(name: string): HTMLCanvasElement | null {
       break;
     }
     case "tile": {
-      c.width = 24; c.height = 24;
+      c.width = 24;
+      c.height = 24;
       ctx.fillStyle = "#8eaec8";
       ctx.fillRect(0, 0, 24, 24);
       const colors = ["#d6eaf8", "#aed6f1", "#e8f4fc", "#c5dff0"];
-      [[0,0,0],[1,0,1],[0,1,2],[1,1,3]].forEach(([col, row, ci]) => {
+      [
+        [0, 0, 0],
+        [1, 0, 1],
+        [0, 1, 2],
+        [1, 1, 3],
+      ].forEach(([col, row, ci]) => {
         ctx.fillStyle = colors[ci];
         ctx.fillRect(col * 12 + 1, row * 12 + 1, 10, 10);
         ctx.fillStyle = "rgba(255,255,255,0.4)";
@@ -254,10 +389,20 @@ function createPatternCanvas(name: string): HTMLCanvasElement | null {
       break;
     }
     case "concrete": {
-      c.width = 20; c.height = 20;
+      c.width = 20;
+      c.height = 20;
       ctx.fillStyle = "#9e9e9e";
       ctx.fillRect(0, 0, 20, 20);
-      const spots = [[2,3,3,"rgba(0,0,0,0.12)"],[7,1,2,"rgba(255,255,255,0.1)"],[12,8,4,"rgba(0,0,0,0.08)"],[4,14,3,"rgba(255,255,255,0.08)"],[16,4,2,"rgba(0,0,0,0.15)"],[1,17,3,"rgba(255,255,255,0.12)"],[10,13,2,"rgba(0,0,0,0.1)"],[17,15,2,"rgba(255,255,255,0.07)"]];
+      const spots = [
+        [2, 3, 3, "rgba(0,0,0,0.12)"],
+        [7, 1, 2, "rgba(255,255,255,0.1)"],
+        [12, 8, 4, "rgba(0,0,0,0.08)"],
+        [4, 14, 3, "rgba(255,255,255,0.08)"],
+        [16, 4, 2, "rgba(0,0,0,0.15)"],
+        [1, 17, 3, "rgba(255,255,255,0.12)"],
+        [10, 13, 2, "rgba(0,0,0,0.1)"],
+        [17, 15, 2, "rgba(255,255,255,0.07)"],
+      ];
       spots.forEach(([x, y, s, col]) => {
         ctx.fillStyle = col as string;
         ctx.fillRect(x as number, y as number, s as number, s as number);
@@ -265,14 +410,31 @@ function createPatternCanvas(name: string): HTMLCanvasElement | null {
       break;
     }
     case "alum": {
-      c.width = 2; c.height = 40;
+      c.width = 2;
+      c.height = 40;
       const alumStripes = [
-        [0,2,"#c8c8c8"],[2,1,"#e8e8e8"],[3,2,"#b8b8b8"],[5,1,"#f0f0f0"],
-        [6,3,"#c0c0c0"],[9,1,"#d8d8d8"],[10,2,"#a8a8a8"],[12,1,"#ececec"],
-        [13,3,"#bebebe"],[16,2,"#d0d0d0"],[18,1,"#f4f4f4"],[19,2,"#b0b0b0"],
-        [21,1,"#e4e4e4"],[22,3,"#c4c4c4"],[25,2,"#a4a4a4"],[27,1,"#e8e8e8"],
-        [28,3,"#bcbcbc"],[31,1,"#f0f0f0"],[32,2,"#c8c8c8"],[34,1,"#d4d4d4"],
-        [35,3,"#b4b4b4"],[38,2,"#e0e0e0"],
+        [0, 2, "#c8c8c8"],
+        [2, 1, "#e8e8e8"],
+        [3, 2, "#b8b8b8"],
+        [5, 1, "#f0f0f0"],
+        [6, 3, "#c0c0c0"],
+        [9, 1, "#d8d8d8"],
+        [10, 2, "#a8a8a8"],
+        [12, 1, "#ececec"],
+        [13, 3, "#bebebe"],
+        [16, 2, "#d0d0d0"],
+        [18, 1, "#f4f4f4"],
+        [19, 2, "#b0b0b0"],
+        [21, 1, "#e4e4e4"],
+        [22, 3, "#c4c4c4"],
+        [25, 2, "#a4a4a4"],
+        [27, 1, "#e8e8e8"],
+        [28, 3, "#bcbcbc"],
+        [31, 1, "#f0f0f0"],
+        [32, 2, "#c8c8c8"],
+        [34, 1, "#d4d4d4"],
+        [35, 3, "#b4b4b4"],
+        [38, 2, "#e0e0e0"],
       ] as [number, number, string][];
       alumStripes.forEach(([y, h, color]) => {
         ctx.fillStyle = color;
@@ -281,261 +443,132 @@ function createPatternCanvas(name: string): HTMLCanvasElement | null {
       break;
     }
     case "iron": {
-      c.width = 6; c.height = 6;
+      c.width = 6;
+      c.height = 6;
       ctx.fillStyle = "#484848";
       ctx.fillRect(0, 0, 6, 6);
-      ctx.fillStyle = "#606060"; ctx.fillRect(0, 0, 3, 1);
-      ctx.fillStyle = "#303030"; ctx.fillRect(3, 0, 3, 1);
-      ctx.fillStyle = "#383838"; ctx.fillRect(0, 2, 2, 2);
-      ctx.fillStyle = "#585858"; ctx.fillRect(2, 2, 4, 2);
-      ctx.fillStyle = "#505050"; ctx.fillRect(0, 4, 6, 1);
-      ctx.fillStyle = "rgba(255,255,255,0.05)"; ctx.fillRect(0, 0, 1, 6);
-      break;
-    }
-    case "marble": {
-      const TW = 200, TH = 200;
-      c.width = TW; c.height = TH;
-
-      let prng = 0xA9B3C7D1;
-      const rng = () => {
-        prng ^= prng << 13; prng ^= prng >>> 17; prng ^= prng << 5;
-        return (prng >>> 0) / 0x100000000;
-      };
-
-      const makeNoise = (scale: number, ox = 0, oy = 0): Float32Array => {
-        const GW = Math.ceil(TW / scale) + 2;
-        const GH = Math.ceil(TH / scale) + 2;
-        const g = new Float32Array(GW * GH);
-        for (let i = 0; i < g.length; i++) g[i] = rng() * 2 - 1;
-        const out = new Float32Array(TW * TH);
-        for (let y = 0; y < TH; y++) {
-          for (let x = 0; x < TW; x++) {
-            const sx = (x + ox) / scale, sy = (y + oy) / scale;
-            const gx0 = Math.min(Math.floor(sx), GW - 2), gy0 = Math.min(Math.floor(sy), GH - 2);
-            const fx = sx - gx0, fy = sy - gy0;
-            const ux = fx * fx * (3 - 2 * fx), uy = fy * fy * (3 - 2 * fy);
-            out[y * TW + x] = (
-              (g[gy0*GW+gx0]*(1-ux) + g[gy0*GW+gx0+1]*ux) * (1-uy) +
-              (g[(gy0+1)*GW+gx0]*(1-ux) + g[(gy0+1)*GW+gx0+1]*ux) * uy
-            );
-          }
-        }
-        return out;
-      };
-
-      const n1 = makeNoise(90,  0,  0);
-      const n2 = makeNoise(45, 40, 60);
-      const n3 = makeNoise(22, 90, 15);
-      const n4 = makeNoise(11, 25, 80);
-      const grain = makeNoise(5, 60, 35);
-
-      const d = ctx.createImageData(TW, TH).data;
-      const img = ctx.createImageData(TW, TH);
-
-      for (let y = 0; y < TH; y++) {
-        for (let x = 0; x < TW; x++) {
-          const ni = y * TW + x;
-
-          // Fractal turbulence
-          const turb = (Math.abs(n1[ni]) + Math.abs(n2[ni]) * 0.5 + Math.abs(n3[ni]) * 0.25 + Math.abs(n4[ni]) * 0.125) / 1.875;
-
-          // Main marble wave (diagonal sweep)
-          const wave  = Math.sin((x * 0.038 + y * 0.014) * Math.PI + turb * 5.5);
-          // Secondary vein (cross direction)
-          const wave2 = Math.sin((-x * 0.018 + y * 0.048) * Math.PI + turb * 3.8 + 2.1);
-
-          const t = ((wave * 0.65 + wave2 * 0.35) + 1) / 2;
-
-          // Veins: darker where wave crosses zero
-          const vein  = Math.pow(Math.max(0, 1 - Math.abs(wave)  * 3.0), 1.8) * 0.42;
-          const vein2 = Math.pow(Math.max(0, 1 - Math.abs(wave2) * 3.5), 2.2) * 0.22;
-          const v = Math.min(1, vein + vein2);
-
-          // Pink marble palette
-          let r, g, b;
-          if (t > 0.5) {
-            const s = (t - 0.5) * 2;
-            r = 242 + (255 - 242) * s; g = 200 + (247 - 200) * s; b = 215 + (250 - 215) * s;
-          } else {
-            const s = t * 2;
-            r = 218 + (242 - 218) * s; g = 168 + (200 - 168) * s; b = 182 + (215 - 182) * s;
-          }
-          // Apply vein
-          r = r * (1 - v) + 196 * v;
-          g = g * (1 - v) + 146 * v;
-          b = b * (1 - v) + 165 * v;
-
-          const gv = grain[ni] * 5;
-          img.data[ni*4]   = Math.max(0, Math.min(255, (r + gv) | 0));
-          img.data[ni*4+1] = Math.max(0, Math.min(255, (g + gv * 0.8) | 0));
-          img.data[ni*4+2] = Math.max(0, Math.min(255, (b + gv * 0.9) | 0));
-          img.data[ni*4+3] = 255;
-        }
-      }
-      void d;
-      ctx.putImageData(img, 0, 0);
+      ctx.fillStyle = "#606060";
+      ctx.fillRect(0, 0, 3, 1);
+      ctx.fillStyle = "#303030";
+      ctx.fillRect(3, 0, 3, 1);
+      ctx.fillStyle = "#383838";
+      ctx.fillRect(0, 2, 2, 2);
+      ctx.fillStyle = "#585858";
+      ctx.fillRect(2, 2, 4, 2);
+      ctx.fillStyle = "#505050";
+      ctx.fillRect(0, 4, 6, 1);
+      ctx.fillStyle = "rgba(255,255,255,0.05)";
+      ctx.fillRect(0, 0, 1, 6);
       break;
     }
     case "tire": {
-      c.width = 16; c.height = 16;
+      c.width = 16;
+      c.height = 16;
       ctx.fillStyle = "#111111";
       ctx.fillRect(0, 0, 16, 16);
-      ctx.strokeStyle = "#2d2d2d"; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.moveTo(-2, 10); ctx.lineTo(6, -2); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(6, 18); ctx.lineTo(18, 6); ctx.stroke();
-      ctx.strokeStyle = "#262626"; ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.moveTo(-2, 14); ctx.lineTo(2, -2); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(14, 18); ctx.lineTo(18, 14); ctx.stroke();
-      ctx.strokeStyle = "#383838"; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(0, 16); ctx.lineTo(16, 0); ctx.stroke();
-      break;
-    }
-    case "zebra": {
-      const TW = 200, TH = 200;
-      c.width = TW; c.height = TH;
-      let prng = 0xD3A9B7C1;
-      const rng = () => { prng ^= prng << 13; prng ^= prng >>> 17; prng ^= prng << 5; return (prng >>> 0) / 0x100000000; };
-      const GW = 12, GH = 12;
-      const g1 = new Float32Array(GW*GH), g2 = new Float32Array(GW*GH), g3 = new Float32Array(GW*GH);
-      for (let i = 0; i < GW*GH; i++) { g1[i] = rng()*2-1; g2[i] = rng()*2-1; g3[i] = rng()*2-1; }
-      const noiseAt = (g: Float32Array, nx: number, ny: number) => {
-        const ix = ((Math.floor(nx)%GW)+GW)%GW, iy = ((Math.floor(ny)%GH)+GH)%GH;
-        const fx = nx-Math.floor(nx), fy = ny-Math.floor(ny);
-        const ux = fx*fx*(3-2*fx), uy = fy*fy*(3-2*fy);
-        return g[iy*GW+ix]*(1-ux)*(1-uy) + g[iy*GW+(ix+1)%GW]*ux*(1-uy) + g[((iy+1)%GH)*GW+ix]*(1-ux)*uy + g[((iy+1)%GH)*GW+(ix+1)%GW]*ux*uy;
-      };
-      const img = ctx.createImageData(TW, TH);
-      for (let y = 0; y < TH; y++) {
-        for (let x = 0; x < TW; x++) {
-          const disp = noiseAt(g1,x/55,y/55)*48 + noiseAt(g2,x/28+4,y/28+4)*22 + noiseAt(g3,x/14+9,y/14+2)*9;
-          const wn = noiseAt(g1, x/70+6, y/70+6);
-          const frac = (((y*0.85 + x*0.22 + disp) / 22) % 1 + 1) % 1;
-          const dark = frac < 0.40 + wn * 0.13;
-          const ni = y*TW+x;
-          img.data[ni*4]   = dark ? 220 : 255;
-          img.data[ni*4+1] = dark ? 0   : 255;
-          img.data[ni*4+2] = dark ? 88  : 255;
-          img.data[ni*4+3] = 255;
-        }
-      }
-      ctx.putImageData(img, 0, 0);
-      break;
-    }
-    case "stripe": {
-      const TW = 200, TH = 200;
-      c.width = TW; c.height = TH;
-      const colors = ["#FF69B4","#FF85C8","#FFD700","#A855F7","#60A5FA","#34D399","#FB923C","#F472B6"];
-      const bh = Math.ceil(TH / colors.length);
-      colors.forEach((col, i) => { ctx.fillStyle = col; ctx.fillRect(0, i*bh, TW, bh); });
-      break;
-    }
-    case "cow": {
-      const TW = 200, TH = 200;
-      c.width = TW; c.height = TH;
-      ctx.fillStyle = "#F8F4EE";
-      ctx.fillRect(0, 0, TW, TH);
-      let prng = 0xB4C3D2E1;
-      const rng = () => { prng ^= prng << 13; prng ^= prng >>> 17; prng ^= prng << 5; return (prng >>> 0) / 0x100000000; };
-      const blobs: { x: number; y: number; rx: number; ry: number; rot: number }[] = [];
-      for (let i = 0; i < 14; i++) {
-        blobs.push({ x: rng()*TW, y: rng()*TH, rx: 12+rng()*22, ry: 8+rng()*18, rot: rng()*Math.PI });
-      }
-      ctx.fillStyle = "#1a1a1a";
-      for (const b of blobs) {
-        ctx.save();
-        ctx.translate(b.x, b.y); ctx.rotate(b.rot);
-        ctx.beginPath(); ctx.ellipse(0, 0, b.rx, b.ry, 0, 0, Math.PI*2);
-        ctx.fill();
-        ctx.restore();
-      }
-      break;
-    }
-    case "leopard": {
-      const TW = 200, TH = 200;
-      c.width = TW; c.height = TH;
-      ctx.fillStyle = "#C8A050";
-      ctx.fillRect(0, 0, TW, TH);
-      let prng = 0xE1D2C3B4;
-      const rng = () => { prng ^= prng << 13; prng ^= prng >>> 17; prng ^= prng << 5; return (prng >>> 0) / 0x100000000; };
-      for (let i = 0; i < 18; i++) {
-        const x = rng()*TW, y = rng()*TH;
-        const r = 7 + rng()*9;
-        const rot = rng()*Math.PI;
-        // outer dark ring
-        ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
-        ctx.strokeStyle = "#3A2000"; ctx.lineWidth = 3.5;
-        ctx.beginPath(); ctx.ellipse(0, 0, r, r*0.65, 0, 0, Math.PI*2); ctx.stroke();
-        // inner light spot
-        ctx.fillStyle = "#E8B860";
-        ctx.beginPath(); ctx.ellipse(0, 0, r*0.5, r*0.35, 0, 0, Math.PI*2); ctx.fill();
-        ctx.restore();
-      }
-      break;
-    }
-    case "tiger": {
-      const TW = 200, TH = 200;
-      c.width = TW; c.height = TH;
-      ctx.fillStyle = "#E87820";
-      ctx.fillRect(0, 0, TW, TH);
-      let prng = 0xC1B2A394;
-      const rng = () => { prng ^= prng << 13; prng ^= prng >>> 17; prng ^= prng << 5; return (prng >>> 0) / 0x100000000; };
-      ctx.strokeStyle = "#1a1008";
-      for (let i = 0; i < 10; i++) {
-        const cy = rng()*TH;
-        const amp = 12 + rng()*20;
-        const freq = 0.03 + rng()*0.04;
-        const w = 6 + rng()*10;
-        ctx.lineWidth = w;
-        ctx.beginPath();
-        for (let x = 0; x <= TW; x += 2) {
-          const y = cy + Math.sin(x*freq*Math.PI*2)*amp + Math.sin(x*freq*1.7*Math.PI*2)*amp*0.4;
-          if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-      }
+      ctx.strokeStyle = "#2d2d2d";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(-2, 10);
+      ctx.lineTo(6, -2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(6, 18);
+      ctx.lineTo(18, 6);
+      ctx.stroke();
+      ctx.strokeStyle = "#262626";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(-2, 14);
+      ctx.lineTo(2, -2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(14, 18);
+      ctx.lineTo(18, 14);
+      ctx.stroke();
+      ctx.strokeStyle = "#383838";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, 16);
+      ctx.lineTo(16, 0);
+      ctx.stroke();
       break;
     }
     case "glitter-pink":
     case "glitter-gold":
     case "glitter-silver":
     case "glitter-holo": {
-      const TW = 200, TH = 200;
-      c.width = TW; c.height = TH;
+      const TW = 200,
+        TH = 200;
+      c.width = TW;
+      c.height = TH;
       const baseCols: Record<string, string> = {
-        "glitter-pink": "#FFE0F0", "glitter-gold": "#FFF8D0",
-        "glitter-silver": "#F0F0F4", "glitter-holo": "#F0EEFF",
+        "glitter-pink": "#FFE0F0",
+        "glitter-gold": "#FFF8D0",
+        "glitter-silver": "#F0F0F4",
+        "glitter-holo": "#F0EEFF",
       };
       ctx.fillStyle = baseCols[name];
       ctx.fillRect(0, 0, TW, TH);
-      let prng = 0xF1E2D3C4;
-      const rng = () => { prng ^= prng << 13; prng ^= prng >>> 17; prng ^= prng << 5; return (prng >>> 0) / 0x100000000; };
+      let prng = 0xf1e2d3c4;
+      const rng = () => {
+        prng ^= prng << 13;
+        prng ^= prng >>> 17;
+        prng ^= prng << 5;
+        return (prng >>> 0) / 0x100000000;
+      };
       const sparkleColors: Record<string, string[]> = {
-        "glitter-pink":   ["#FF69B4","#FF1493","#FFB6D9","#FFFFFF","#FF85C8"],
-        "glitter-gold":   ["#FFD700","#FFA500","#FFE55C","#FFFFFF","#D4AF37"],
-        "glitter-silver": ["#C0C0C0","#A8A8A8","#E8E8E8","#FFFFFF","#888888"],
-        "glitter-holo":   ["#FF69B4","#00CED1","#FFD700","#FFFFFF","#AA88FF","#FF6347","#7CFC00"],
+        "glitter-pink": ["#FF69B4", "#FF1493", "#FFB6D9", "#FFFFFF", "#FF85C8"],
+        "glitter-gold": ["#FFD700", "#FFA500", "#FFE55C", "#FFFFFF", "#D4AF37"],
+        "glitter-silver": [
+          "#C0C0C0",
+          "#A8A8A8",
+          "#E8E8E8",
+          "#FFFFFF",
+          "#888888",
+        ],
+        "glitter-holo": [
+          "#FF69B4",
+          "#00CED1",
+          "#FFD700",
+          "#FFFFFF",
+          "#AA88FF",
+          "#FF6347",
+          "#7CFC00",
+        ],
       };
       const cols = sparkleColors[name];
       for (let i = 0; i < 220; i++) {
-        const x = rng()*TW, y = rng()*TH;
-        const sz = 0.8 + rng()*2.8;
-        const col = cols[Math.floor(rng()*cols.length)];
+        const x = rng() * TW,
+          y = rng() * TH;
+        const sz = 0.8 + rng() * 2.8;
+        const col = cols[Math.floor(rng() * cols.length)];
         ctx.fillStyle = col;
-        ctx.globalAlpha = 0.5 + rng()*0.5;
-        ctx.beginPath(); ctx.arc(x, y, sz, 0, Math.PI*2); ctx.fill();
+        ctx.globalAlpha = 0.5 + rng() * 0.5;
+        ctx.beginPath();
+        ctx.arc(x, y, sz, 0, Math.PI * 2);
+        ctx.fill();
         // cross sparkle on larger dots
         if (sz > 2) {
           ctx.lineWidth = 0.6;
           ctx.strokeStyle = col;
-          ctx.beginPath(); ctx.moveTo(x-sz*2, y); ctx.lineTo(x+sz*2, y); ctx.stroke();
-          ctx.beginPath(); ctx.moveTo(x, y-sz*2); ctx.lineTo(x, y+sz*2); ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(x - sz * 2, y);
+          ctx.lineTo(x + sz * 2, y);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(x, y - sz * 2);
+          ctx.lineTo(x, y + sz * 2);
+          ctx.stroke();
         }
       }
       ctx.globalAlpha = 1;
       break;
     }
-    default: return null;
+    default:
+      return null;
   }
+  patternTileCache.set(name, c);
   return c;
 }
 
@@ -549,7 +582,8 @@ function drawRing(
 ) {
   if (!color1 && !f.render) return;
   const ringW = size * (ringPct / 100);
-  const cx = size / 2, cy = size / 2;
+  const cx = size / 2,
+    cy = size / 2;
   const r = size / 2 - ringW / 2 - 1;
   ctx.lineWidth = ringW;
 
@@ -557,7 +591,7 @@ function drawRing(
   if (f.render?.kind === "pattern" && f.render.name === "tire") {
     const ro = size / 2 - 2;
     const ri = ro - ringW + 1;
-    const tRi = ri + ringW * 0.44;  // tread inner boundary
+    const tRi = ri + ringW * 0.44; // tread inner boundary
 
     // Dark rubber base
     ctx.beginPath();
@@ -577,20 +611,29 @@ function drawRing(
     const gw = Math.max(1, ringW * 0.055);
     ctx.strokeStyle = "#0f0f0f";
     ctx.lineWidth = gw;
-    [tRi, tRi + (ro - tRi) * 0.34, tRi + (ro - tRi) * 0.67, ro - gw * 0.6].forEach(rad => {
-      ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2); ctx.stroke();
+    [
+      tRi,
+      tRi + (ro - tRi) * 0.34,
+      tRi + (ro - tRi) * 0.67,
+      ro - gw * 0.6,
+    ].forEach((rad) => {
+      ctx.beginPath();
+      ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+      ctx.stroke();
     });
 
     // Lateral tread cuts (alternating slant)
-    const nCuts = Math.round(2 * Math.PI * (tRi + ro) / 2 / (ringW * 0.58));
+    const nCuts = Math.round((2 * Math.PI * (tRi + ro)) / 2 / (ringW * 0.58));
     ctx.lineWidth = Math.max(0.5, ringW * 0.028);
     for (let i = 0; i < nCuts; i++) {
       const a = (2 * Math.PI * i) / nCuts;
       const sl = ringW * 0.04 * (i % 2 === 0 ? 1 : -1);
       ctx.save();
-      ctx.translate(cx, cy); ctx.rotate(a);
+      ctx.translate(cx, cy);
+      ctx.rotate(a);
       ctx.beginPath();
-      ctx.moveTo(tRi, sl); ctx.lineTo(ro, -sl * 0.5);
+      ctx.moveTo(tRi, sl);
+      ctx.lineTo(ro, -sl * 0.5);
       ctx.strokeStyle = "#0f0f0f";
       ctx.stroke();
       ctx.restore();
@@ -610,7 +653,7 @@ function drawRing(
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
-    const brand = "MARU  ICON  ";  // 12 chars × 15° = 180° per rep
+    const brand = "MARU  ICON  "; // 12 chars × 15° = 180° per rep
     const ca = Math.PI / brand.length;
 
     for (let rep = 0; rep < 2; rep++) {
@@ -619,14 +662,18 @@ function drawRing(
         // Emboss shadow
         ctx.fillStyle = "#0e0e0e";
         ctx.save();
-        ctx.translate(cx + 0.5, cy + 0.5); ctx.rotate(a);
-        ctx.translate(0, -textR); ctx.fillText(brand[i], 0, 0);
+        ctx.translate(cx + 0.5, cy + 0.5);
+        ctx.rotate(a);
+        ctx.translate(0, -textR);
+        ctx.fillText(brand[i], 0, 0);
         ctx.restore();
         // Raised face
         ctx.fillStyle = "#484848";
         ctx.save();
-        ctx.translate(cx, cy); ctx.rotate(a);
-        ctx.translate(0, -textR); ctx.fillText(brand[i], 0, 0);
+        ctx.translate(cx, cy);
+        ctx.rotate(a);
+        ctx.translate(0, -textR);
+        ctx.fillText(brand[i], 0, 0);
         ctx.restore();
       }
     }
@@ -642,8 +689,10 @@ function drawRing(
         const a = rep * Math.PI + Math.PI / 8 + i * sca;
         ctx.fillStyle = "#2e2e2e";
         ctx.save();
-        ctx.translate(cx, cy); ctx.rotate(a);
-        ctx.translate(0, -subR); ctx.fillText(sub[i], 0, 0);
+        ctx.translate(cx, cy);
+        ctx.rotate(a);
+        ctx.translate(0, -subR);
+        ctx.fillText(sub[i], 0, 0);
         ctx.restore();
       }
     }
@@ -654,12 +703,21 @@ function drawRing(
   if (f.render?.kind === "pattern") {
     const tile = createPatternCanvas(f.render.name);
     if (!tile) return;
-    const pattern = ctx.createPattern(tile, "repeat");
-    if (!pattern) return;
+    const ro = r + ringW / 2;
+    const ri = r - ringW / 2;
+    ctx.save();
     ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.strokeStyle = pattern;
-    ctx.stroke();
+    ctx.arc(cx, cy, ro, 0, Math.PI * 2);
+    ctx.arc(cx, cy, ri, 0, Math.PI * 2);
+    ctx.clip("evenodd");
+    const tw = tile.width,
+      th = tile.height;
+    for (let ty = 0; ty < size; ty += th) {
+      for (let tx = 0; tx < size; tx += tw) {
+        ctx.drawImage(tile, tx, ty);
+      }
+    }
+    ctx.restore();
     return;
   }
 
@@ -700,7 +758,7 @@ function drawRing(
       ctx.stroke();
     } else {
       ctx.beginPath();
-      ctx.arc(cx, cy, r, Math.PI / 2, 3 * Math.PI / 2);
+      ctx.arc(cx, cy, r, Math.PI / 2, (3 * Math.PI) / 2);
       ctx.strokeStyle = color1;
       ctx.stroke();
       ctx.beginPath();
@@ -740,7 +798,8 @@ export default function IconMaker() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const frame = getFrame(selectedFrameId);
-  const filteredFrames = category === "all" ? FRAMES : FRAMES.filter((f) => f.category === category);
+  const filteredFrames =
+    category === "all" ? FRAMES : FRAMES.filter((f) => f.category === category);
 
   const drawPreview = useCallback(() => {
     const canvas = previewRef.current;
@@ -765,7 +824,8 @@ export default function IconMaker() {
     if (photoRef.current) {
       const scale = zoom / 100;
       const imgW = innerR * 2 * scale;
-      const imgH = (photoRef.current.naturalHeight / photoRef.current.naturalWidth) * imgW;
+      const imgH =
+        (photoRef.current.naturalHeight / photoRef.current.naturalWidth) * imgW;
       const filterCss = FILTERS.find((fi) => fi.id === filterId)?.css ?? "";
       ctx.filter = filterCss || "none";
       ctx.drawImage(
@@ -783,20 +843,38 @@ export default function IconMaker() {
     const ringC2 = customRingColor2 ?? undefined;
     drawRing(ctx, f, size, ringC1, ringC2, ringPct);
 
-    if (f.emblem) {
-      const er = Math.min(size * 0.1, ringW * 0.44);
-      const ey = cy - (size / 2 - ringW * 0.5);
-      ctx.beginPath();
-      ctx.arc(cx, ey, er, 0, Math.PI * 2);
-      ctx.fillStyle = f.emblemBg;
-      ctx.fill();
-      ctx.font = `bold ${er * 1.1}px sans-serif`;
-      ctx.fillStyle = "#fff";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(f.emblem, cx, ey);
+    {
+      const typeName = f.id.startsWith("pk-") ? f.id.slice(3) : null;
+      const typePath = typeName ? POKEMON_TYPE_PATHS[typeName] : null;
+      if (f.emblem || typePath) {
+        const er = Math.min(size * 0.1, ringW * 0.44);
+        const ey = cy - (size / 2 - ringW * 0.5);
+        ctx.beginPath();
+        ctx.arc(cx, ey, er, 0, Math.PI * 2);
+        ctx.fillStyle = typePath ? (customRingColor ?? f.ring) : f.emblemBg;
+        ctx.fill();
+        if (typePath) {
+          drawTypeIcon(ctx, typePath, cx, ey, er * 0.85);
+        } else {
+          ctx.font = `bold ${er * 1.1}px sans-serif`;
+          ctx.fillStyle = "#fff";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(f.emblem, cx, ey);
+        }
+      }
     }
-  }, [selectedFrameId, bgColor, zoom, offsetX, offsetY, customRingColor, customRingColor2, ringPct, filterId]);
+  }, [
+    selectedFrameId,
+    bgColor,
+    zoom,
+    offsetX,
+    offsetY,
+    customRingColor,
+    customRingColor2,
+    ringPct,
+    filterId,
+  ]);
 
   useEffect(() => {
     drawPreview();
@@ -844,7 +922,12 @@ export default function IconMaker() {
     if (!imageSrc) return;
     setShowDragHint(false);
     setIsDragging(true);
-    dragStart.current = { x: e.clientX, y: e.clientY, ox: offsetX, oy: offsetY };
+    dragStart.current = {
+      x: e.clientX,
+      y: e.clientY,
+      ox: offsetX,
+      oy: offsetY,
+    };
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   };
   const onPointerMove = (e: React.PointerEvent) => {
@@ -858,13 +941,20 @@ export default function IconMaker() {
     return new Promise((resolve, reject) => {
       const SIZE = 512;
       const oc = offscreenRef.current;
-      if (!oc) { reject(new Error("no canvas")); return; }
+      if (!oc) {
+        reject(new Error("no canvas"));
+        return;
+      }
       oc.width = SIZE;
       oc.height = SIZE;
       const ctx = oc.getContext("2d");
-      if (!ctx) { reject(new Error("no context")); return; }
+      if (!ctx) {
+        reject(new Error("no context"));
+        return;
+      }
       const f = getFrame(selectedFrameId);
-      const cx = SIZE / 2, cy = SIZE / 2;
+      const cx = SIZE / 2,
+        cy = SIZE / 2;
       const ringW = SIZE * (ringPct / 100);
       const innerR = SIZE / 2 - ringW - 2;
 
@@ -878,7 +968,9 @@ export default function IconMaker() {
         const scale = zoom / 100;
         const ratio = previewRef.current ? previewRef.current.width / SIZE : 1;
         const imgW = innerR * 2 * scale;
-        const imgH = (photoRef.current.naturalHeight / photoRef.current.naturalWidth) * imgW;
+        const imgH =
+          (photoRef.current.naturalHeight / photoRef.current.naturalWidth) *
+          imgW;
         const filterCss = FILTERS.find((fi) => fi.id === filterId)?.css ?? "";
         ctx.filter = filterCss || "none";
         ctx.drawImage(
@@ -896,22 +988,33 @@ export default function IconMaker() {
       const ringC2 = customRingColor2 ?? undefined;
       drawRing(ctx, f, SIZE, ringC1, ringC2, ringPct);
 
-      if (f.emblem) {
-        const er = Math.min(SIZE * 0.1, ringW * 0.44);
-        const ey = cy - (SIZE / 2 - ringW * 0.5);
-        ctx.beginPath();
-        ctx.arc(cx, ey, er, 0, Math.PI * 2);
-        ctx.fillStyle = f.emblemBg;
-        ctx.fill();
-        ctx.font = `bold ${er * 1.1}px sans-serif`;
-        ctx.fillStyle = "#fff";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(f.emblem, cx, ey);
+      {
+        const typeName = f.id.startsWith("pk-") ? f.id.slice(3) : null;
+        const typePath = typeName ? POKEMON_TYPE_PATHS[typeName] : null;
+        if (f.emblem || typePath) {
+          const er = Math.min(SIZE * 0.1, ringW * 0.44);
+          const ey = cy - (SIZE / 2 - ringW * 0.5);
+          ctx.beginPath();
+          ctx.arc(cx, ey, er, 0, Math.PI * 2);
+          ctx.fillStyle = typePath ? (customRingColor ?? f.ring) : f.emblemBg;
+          ctx.fill();
+          if (typePath) {
+            drawTypeIcon(ctx, typePath, cx, ey, er * 0.85);
+          } else {
+            ctx.font = `bold ${er * 1.1}px sans-serif`;
+            ctx.fillStyle = "#fff";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(f.emblem, cx, ey);
+          }
+        }
       }
 
       oc.toBlob((blob) => {
-        if (!blob) { reject(new Error("blob failed")); return; }
+        if (!blob) {
+          reject(new Error("blob failed"));
+          return;
+        }
         resolve(blob);
       }, "image/png");
     });
@@ -923,7 +1026,9 @@ export default function IconMaker() {
     const file = new File([blob], "maru-icon.png", { type: "image/png" });
     const isMobile = /iP(hone|ad|od)|Android/i.test(navigator.userAgent);
     if (isMobile && navigator.canShare?.({ files: [file] })) {
-      await navigator.share({ files: [file], title: "まるアイコン" }).catch(() => {});
+      await navigator
+        .share({ files: [file], title: "まるアイコン" })
+        .catch(() => {});
     } else {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -941,17 +1046,20 @@ export default function IconMaker() {
       if (!blob) return;
       const file = new File([blob], "maru-icon.png", { type: "image/png" });
       if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: "まるアイコン",
-          text: "プロフィール画像を作ったよ🎉",
-          url: "https://maru-icon.com",
-        }).catch(() => {});
+        await navigator
+          .share({
+            files: [file],
+            title: "まるアイコン",
+            text: "プロフィール画像を作ったよ🎉",
+            url: "https://maru-icon.com",
+          })
+          .catch(() => {});
         return;
       }
     }
     window.open(
-      "https://social-plugins.line.me/lineit/share?url=" + encodeURIComponent("https://maru-icon.com"),
+      "https://social-plugins.line.me/lineit/share?url=" +
+        encodeURIComponent("https://maru-icon.com"),
       "_blank",
       "noopener,noreferrer"
     );
@@ -964,12 +1072,14 @@ export default function IconMaker() {
       if (blob) {
         const file = new File([blob], "maru-icon.png", { type: "image/png" });
         if (navigator.canShare?.({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: "まるアイコン",
-            text: "プロフィール画像を作ったよ🎉 #まるアイコン",
-            url: "https://maru-icon.com",
-          }).catch(() => {});
+          await navigator
+            .share({
+              files: [file],
+              title: "まるアイコン",
+              text: "プロフィール画像を作ったよ🎉 #まるアイコン",
+              url: "https://maru-icon.com",
+            })
+            .catch(() => {});
           return;
         }
       }
@@ -977,7 +1087,8 @@ export default function IconMaker() {
     window.open(
       "https://twitter.com/intent/tweet?text=" +
         encodeURIComponent("プロフィール画像を作ったよ🎉 #まるアイコン") +
-        "&url=" + encodeURIComponent("https://maru-icon.com"),
+        "&url=" +
+        encodeURIComponent("https://maru-icon.com"),
       "_blank",
       "noopener,noreferrer"
     );
@@ -995,42 +1106,65 @@ export default function IconMaker() {
   return (
     <div className="max-w-5xl mx-auto px-3 py-4 md:py-8">
       <div className="grid grid-cols-1 md:grid-cols-[300px_1fr_280px] gap-4">
-
         {/* 左カラム */}
         <div className="flex flex-col gap-4">
-
           {/* Step1: アップロード */}
           <div className="bg-white rounded-2xl shadow overflow-hidden">
             <div className="flex items-center gap-2 px-4 pt-4 pb-2">
-              <span className="w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">1</span>
+              <span className="w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
+                1
+              </span>
               <span className="font-bold text-sm">写真をアップロード</span>
             </div>
             <div className="px-4 pb-4">
               <div
-                className={`relative border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${imageSrc ? "border-green-400 bg-green-50" : "border-gray-200 hover:border-red-400 hover:bg-red-50"}`}
+                className={`relative border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
+                  imageSrc
+                    ? "border-green-400 bg-green-50"
+                    : "border-gray-200 hover:border-red-400 hover:bg-red-50"
+                }`}
                 onClick={() => fileInputRef.current?.click()}
                 onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) loadFile(f); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const f = e.dataTransfer.files[0];
+                  if (f) loadFile(f);
+                }}
               >
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) loadFile(f); }}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) loadFile(f);
+                  }}
                 />
                 {imageSrc ? (
                   <>
-                    <img src={imageSrc} className="w-16 h-16 object-cover rounded-lg mx-auto mb-2" alt="preview" />
-                    <p className="text-xs font-bold text-green-600">✓ アップロード完了</p>
+                    <img
+                      src={imageSrc}
+                      className="w-16 h-16 object-cover rounded-lg mx-auto mb-2"
+                      alt="preview"
+                    />
+                    <p className="text-xs font-bold text-green-600">
+                      ✓ アップロード完了
+                    </p>
                     <p className="text-xs text-gray-400 mt-1">タップして変更</p>
                   </>
                 ) : (
                   <>
                     <div className="text-3xl mb-2">🖼️</div>
-                    <p className="text-sm font-semibold text-gray-700">写真を選ぶ</p>
-                    <p className="text-xs text-gray-400 mt-1">またはドラッグ&ドロップ</p>
-                    <p className="text-xs text-gray-400">JPG / PNG / WEBP 対応</p>
+                    <p className="text-sm font-semibold text-gray-700">
+                      写真を選ぶ
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      またはドラッグ&ドロップ
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      JPG / PNG / WEBP 対応
+                    </p>
                   </>
                 )}
               </div>
@@ -1040,13 +1174,20 @@ export default function IconMaker() {
           {/* Step2: フレーム */}
           <div className="bg-white rounded-2xl shadow overflow-hidden">
             <div className="flex items-center gap-2 px-4 pt-4 pb-2">
-              <span className="w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">2</span>
+              <span className="w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
+                2
+              </span>
               <span className="font-bold text-sm">フレームを選ぶ</span>
             </div>
             <div className="px-4 pb-4">
               {/* 現在選択中 */}
               <div className="flex items-center gap-2 p-2 bg-red-50 rounded-xl mb-3">
-                <FrameThumb frame={frame} size={36} color1={ringC1} color2={ringC2} />
+                <FrameThumb
+                  frame={frame}
+                  size={36}
+                  color1={ringC1}
+                  color2={ringC2}
+                />
                 <span className="text-sm font-bold flex-1">{frame.name}</span>
               </div>
               {/* カテゴリタブ */}
@@ -1055,7 +1196,11 @@ export default function IconMaker() {
                   <button
                     key={c.id}
                     onClick={() => setCategory(c.id)}
-                    className={`text-xs px-3 py-1 rounded-full font-semibold transition-colors ${category === c.id ? "bg-red-500 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}
+                    className={`text-xs px-3 py-1 rounded-full font-semibold transition-colors ${
+                      category === c.id
+                        ? "bg-red-500 text-white"
+                        : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                    }`}
                   >
                     {c.label}
                   </button>
@@ -1067,10 +1212,16 @@ export default function IconMaker() {
                   <button
                     key={f.id}
                     onClick={() => selectFrame(f.id)}
-                    className={`p-1.5 rounded-xl text-center transition-all border-2 ${f.id === selectedFrameId ? "border-red-500 bg-red-50" : "border-transparent bg-gray-50 hover:border-red-200"}`}
+                    className={`p-1.5 rounded-xl text-center transition-all border-2 ${
+                      f.id === selectedFrameId
+                        ? "border-red-500 bg-red-50"
+                        : "border-transparent bg-gray-50 hover:border-red-200"
+                    }`}
                   >
                     <FrameThumb frame={f} size={40} />
-                    <p className="text-[9px] font-semibold text-gray-700 mt-1 leading-tight">{f.name}</p>
+                    <p className="text-[9px] font-semibold text-gray-700 mt-1 leading-tight">
+                      {f.name}
+                    </p>
                   </button>
                 ))}
               </div>
@@ -1079,8 +1230,12 @@ export default function IconMaker() {
               {frame.id !== "none" && (
                 <div className="mt-3 pt-3 border-t border-gray-100">
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-xs font-semibold text-gray-500">フレームの太さ</p>
-                    <span className="text-xs text-gray-400">{Math.round(ringPct)}%</span>
+                    <p className="text-xs font-semibold text-gray-500">
+                      フレームの太さ
+                    </p>
+                    <span className="text-xs text-gray-400">
+                      {Math.round(ringPct)}%
+                    </span>
                   </div>
                   <input
                     type="range"
@@ -1105,7 +1260,11 @@ export default function IconMaker() {
                       <button
                         key={c}
                         onClick={() => setCustomRingColor(c)}
-                        className={`w-6 h-6 rounded-full border-2 transition-all flex-shrink-0 ${ringC1 === c ? "border-red-500 scale-110" : "border-gray-200"}`}
+                        className={`w-6 h-6 rounded-full border-2 transition-all flex-shrink-0 ${
+                          ringC1 === c
+                            ? "border-red-500 scale-110"
+                            : "border-gray-200"
+                        }`}
                         style={{ background: c }}
                         title={c}
                       />
@@ -1120,13 +1279,19 @@ export default function IconMaker() {
                   </div>
                   {frame.splitDir && (
                     <>
-                      <p className="text-xs font-semibold text-gray-500 mt-3 mb-2">カラーB（右 / 下）</p>
+                      <p className="text-xs font-semibold text-gray-500 mt-3 mb-2">
+                        カラーB（右 / 下）
+                      </p>
                       <div className="flex gap-1.5 flex-wrap items-center">
                         {RING_PRESETS.map((c) => (
                           <button
                             key={c}
                             onClick={() => setCustomRingColor2(c)}
-                            className={`w-6 h-6 rounded-full border-2 transition-all flex-shrink-0 ${ringC2 === c ? "border-red-500 scale-110" : "border-gray-200"}`}
+                            className={`w-6 h-6 rounded-full border-2 transition-all flex-shrink-0 ${
+                              ringC2 === c
+                                ? "border-red-500 scale-110"
+                                : "border-gray-200"
+                            }`}
                             style={{ background: c }}
                             title={c}
                           />
@@ -1149,12 +1314,21 @@ export default function IconMaker() {
 
         {/* 中央: プレビュー */}
         <div className="bg-white rounded-2xl shadow">
-          <p className="text-center font-bold text-sm py-3 border-b border-gray-100">プレビュー</p>
+          <p className="text-center font-bold text-sm py-3 border-b border-gray-100">
+            プレビュー
+          </p>
           <div className="flex justify-center items-center p-6 bg-red-50">
             <div className="relative w-full max-w-[280px] aspect-square">
               {showDragHint && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                  <span style={{ fontSize: "2.5rem", animation: "hint-drag 1.2s ease-in-out infinite" }}>👆</span>
+                  <span
+                    style={{
+                      fontSize: "2.5rem",
+                      animation: "hint-drag 1.2s ease-in-out infinite",
+                    }}
+                  >
+                    👆
+                  </span>
                 </div>
               )}
               <canvas
@@ -1181,11 +1355,19 @@ export default function IconMaker() {
               />
               <span className="text-sm">🔍</span>
               <button
-                onClick={() => { setOffsetX(0); setOffsetY(0); setZoom(100); }}
+                onClick={() => {
+                  setOffsetX(0);
+                  setOffsetY(0);
+                  setZoom(100);
+                }}
                 className="flex-shrink-0 px-2 py-1 text-xs font-bold border border-gray-200 rounded-lg hover:border-red-400 text-gray-500 transition-colors"
-              >↺</button>
+              >
+                ↺
+              </button>
             </div>
-            <p className="text-center text-xs text-gray-400">スライダーでズーム・プレビューをドラッグで移動</p>
+            <p className="text-center text-xs text-gray-400">
+              スライダーでズーム・プレビューをドラッグで移動
+            </p>
           </div>
           {/* フィルター */}
           <div className="px-5 pb-3 border-t border-gray-100 pt-3">
@@ -1195,16 +1377,25 @@ export default function IconMaker() {
                 <button
                   key={fi.id}
                   onClick={() => setFilterId(fi.id)}
-                  className={`flex-shrink-0 text-center transition-opacity ${filterId === fi.id ? "opacity-100" : "opacity-50 hover:opacity-75"}`}
+                  className={`flex-shrink-0 text-center transition-opacity ${
+                    filterId === fi.id
+                      ? "opacity-100"
+                      : "opacity-50 hover:opacity-75"
+                  }`}
                 >
                   <div
-                    className={`w-11 h-11 rounded-full border-2 mx-auto mb-1 ${filterId === fi.id ? "border-red-500" : "border-gray-200"}`}
+                    className={`w-11 h-11 rounded-full border-2 mx-auto mb-1 ${
+                      filterId === fi.id ? "border-red-500" : "border-gray-200"
+                    }`}
                     style={{
-                      background: "linear-gradient(135deg, #f9a8d4, #fbbf24, #34d399, #60a5fa)",
+                      background:
+                        "linear-gradient(135deg, #f9a8d4, #fbbf24, #34d399, #60a5fa)",
                       filter: fi.css || undefined,
                     }}
                   />
-                  <p className="text-[9px] text-gray-600 leading-tight">{fi.name}</p>
+                  <p className="text-[9px] text-gray-600 leading-tight">
+                    {fi.name}
+                  </p>
                 </button>
               ))}
             </div>
@@ -1213,14 +1404,20 @@ export default function IconMaker() {
           {/* 背景色 */}
           <div className="px-5 pb-5 border-t border-gray-100 pt-3">
             <p className="text-xs text-gray-400 mb-1">背景色</p>
-            <p className="text-[10px] text-gray-300 mb-2">透過PNG（ロゴ・イラスト等）で有効</p>
+            <p className="text-[10px] text-gray-300 mb-2">
+              透過PNG（ロゴ・イラスト等）で有効
+            </p>
             <div className="flex gap-2 flex-wrap">
               {BG_COLORS.map(({ color, label }) => (
                 <button
                   key={color}
                   title={label}
                   onClick={() => setBgColor(color)}
-                  className={`w-8 h-8 rounded-full transition-all border-2 ${bgColor === color ? "border-red-500 scale-110" : "border-gray-200"}`}
+                  className={`w-8 h-8 rounded-full transition-all border-2 ${
+                    bgColor === color
+                      ? "border-red-500 scale-110"
+                      : "border-gray-200"
+                  }`}
                   style={{ background: color }}
                 />
               ))}
@@ -1233,7 +1430,9 @@ export default function IconMaker() {
           {/* Step3: ダウンロード */}
           <div className="bg-white rounded-2xl shadow">
             <div className="flex items-center gap-2 px-4 pt-4 pb-3">
-              <span className="w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">3</span>
+              <span className="w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
+                3
+              </span>
               <span className="font-bold text-sm">ダウンロード</span>
             </div>
             <div className="px-4 pb-4 flex flex-col gap-2">
@@ -1250,7 +1449,14 @@ export default function IconMaker() {
                   disabled={!imageSrc}
                   className="flex-1 py-2.5 text-xs font-bold bg-[#06C755] hover:bg-[#05aa4a] disabled:bg-gray-200 disabled:text-gray-400 text-white rounded-xl transition-colors flex items-center justify-center gap-1"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.036 2 11.073c0 4.49 3.164 8.244 7.467 9.01.327.064.773.197.886.453.101.233.066.598.032.835l-.144.857c-.044.253-.202 1.01.887.55 1.089-.46 5.878-3.459 8.02-5.922C20.627 15.29 22 13.306 22 11.073 22 6.036 17.523 2 12 2z"/></svg>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M12 2C6.477 2 2 6.036 2 11.073c0 4.49 3.164 8.244 7.467 9.01.327.064.773.197.886.453.101.233.066.598.032.835l-.144.857c-.044.253-.202 1.01.887.55 1.089-.46 5.878-3.459 8.02-5.922C20.627 15.29 22 13.306 22 11.073 22 6.036 17.523 2 12 2z" />
+                  </svg>
                   LINE
                 </button>
                 <button
@@ -1258,7 +1464,14 @@ export default function IconMaker() {
                   disabled={!imageSrc}
                   className="flex-1 py-2.5 text-xs font-bold bg-black hover:bg-gray-800 disabled:bg-gray-200 disabled:text-gray-400 text-white rounded-xl transition-colors flex items-center justify-center gap-1"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                  </svg>
                   X でシェア
                 </button>
               </div>
@@ -1268,9 +1481,12 @@ export default function IconMaker() {
                     onClick={() => {
                       photoRef.current = null;
                       setImageSrc(null);
-                      setZoom(100); setOffsetX(0); setOffsetY(0);
+                      setZoom(100);
+                      setOffsetX(0);
+                      setOffsetY(0);
                       setResetConfirm(false);
-                      if (resetConfirmTimer.current) clearTimeout(resetConfirmTimer.current);
+                      if (resetConfirmTimer.current)
+                        clearTimeout(resetConfirmTimer.current);
                       drawPreview();
                     }}
                     className="flex-1 py-2.5 text-xs font-bold bg-red-500 hover:bg-red-600 text-white rounded-xl transition-colors"
@@ -1278,7 +1494,11 @@ export default function IconMaker() {
                     リセットする
                   </button>
                   <button
-                    onClick={() => { setResetConfirm(false); if (resetConfirmTimer.current) clearTimeout(resetConfirmTimer.current); }}
+                    onClick={() => {
+                      setResetConfirm(false);
+                      if (resetConfirmTimer.current)
+                        clearTimeout(resetConfirmTimer.current);
+                    }}
                     className="flex-1 py-2.5 text-xs font-bold border border-gray-200 rounded-xl hover:border-gray-400 text-gray-500 transition-colors"
                   >
                     キャンセル
@@ -1287,10 +1507,19 @@ export default function IconMaker() {
               ) : (
                 <button
                   onClick={() => {
-                    if (!imageSrc) { setZoom(100); setOffsetX(0); setOffsetY(0); return; }
+                    if (!imageSrc) {
+                      setZoom(100);
+                      setOffsetX(0);
+                      setOffsetY(0);
+                      return;
+                    }
                     setResetConfirm(true);
-                    if (resetConfirmTimer.current) clearTimeout(resetConfirmTimer.current);
-                    resetConfirmTimer.current = setTimeout(() => setResetConfirm(false), 3000);
+                    if (resetConfirmTimer.current)
+                      clearTimeout(resetConfirmTimer.current);
+                    resetConfirmTimer.current = setTimeout(
+                      () => setResetConfirm(false),
+                      3000
+                    );
                   }}
                   className="w-full py-2.5 text-xs font-bold border border-gray-200 rounded-xl hover:border-gray-400 text-gray-500 transition-colors"
                 >
@@ -1298,14 +1527,18 @@ export default function IconMaker() {
                 </button>
               )}
               {!imageSrc && (
-                <p className="text-center text-xs text-gray-400">写真をアップロードすると保存できます</p>
+                <p className="text-center text-xs text-gray-400">
+                  写真をアップロードすると保存できます
+                </p>
               )}
             </div>
           </div>
 
           {/* SNS用途説明 */}
           <div className="bg-white rounded-2xl shadow p-4">
-            <p className="text-xs font-bold text-gray-600 mb-2">💡 こんな用途に</p>
+            <p className="text-xs font-bold text-gray-600 mb-2">
+              💡 こんな用途に
+            </p>
             <ul className="text-xs text-gray-500 space-y-1">
               <li>✓ LINE プロフィール画像</li>
               <li>✓ X（Twitter）アイコン</li>
@@ -1313,7 +1546,9 @@ export default function IconMaker() {
               <li>✓ Discord・Slack アバター</li>
               <li>✓ YouTube チャンネルアイコン</li>
             </ul>
-            <p className="text-xs text-gray-400 mt-2">512×512px のPNG形式で保存</p>
+            <p className="text-xs text-gray-400 mt-2">
+              512×512px のPNG形式で保存
+            </p>
           </div>
         </div>
       </div>
@@ -1323,7 +1558,12 @@ export default function IconMaker() {
   );
 }
 
-function FrameThumb({ frame, size, color1, color2 }: {
+function FrameThumb({
+  frame,
+  size,
+  color1,
+  color2,
+}: {
   frame: Frame;
   size: number;
   color1?: string;
@@ -1338,7 +1578,9 @@ function FrameThumb({ frame, size, color1, color2 }: {
     c.height = size;
     const ctx = c.getContext("2d");
     if (!ctx) return;
-    const cx = size / 2, cy = size / 2, r = size / 2 - 2;
+    const cx = size / 2,
+      cy = size / 2,
+      r = size / 2 - 2;
     ctx.clearRect(0, 0, size, size);
 
     const lw = size * 0.15;
@@ -1357,13 +1599,21 @@ function FrameThumb({ frame, size, color1, color2 }: {
     if (frame.render?.kind === "pattern") {
       const tile = createPatternCanvas(frame.render.name);
       if (tile) {
-        const pattern = ctx.createPattern(tile, "repeat");
-        if (pattern) {
-          ctx.beginPath();
-          ctx.arc(cx, cy, r, 0, Math.PI * 2);
-          ctx.strokeStyle = pattern;
-          ctx.stroke();
+        const ro = r + lw / 2;
+        const ri = r - lw / 2;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, ro, 0, Math.PI * 2);
+        ctx.arc(cx, cy, ri, 0, Math.PI * 2);
+        ctx.clip("evenodd");
+        const tw = tile.width,
+          th = tile.height;
+        for (let ty = 0; ty < size; ty += th) {
+          for (let tx = 0; tx < size; tx += tw) {
+            ctx.drawImage(tile, tx, ty);
+          }
         }
+        ctx.restore();
       }
     } else if (frame.render?.kind === "segments") {
       const { colors, n } = frame.render;
@@ -1377,7 +1627,9 @@ function FrameThumb({ frame, size, color1, color2 }: {
       }
     } else if (frame.render?.kind === "conic") {
       const g = ctx.createConicGradient(-Math.PI / 2, cx, cy);
-      frame.render.stops.forEach(([offset, color]) => g.addColorStop(offset, color));
+      frame.render.stops.forEach(([offset, color]) =>
+        g.addColorStop(offset, color)
+      );
       ctx.beginPath();
       ctx.arc(cx, cy, r, 0, Math.PI * 2);
       ctx.strokeStyle = g;
@@ -1387,11 +1639,23 @@ function FrameThumb({ frame, size, color1, color2 }: {
       const c2 = color2 ?? frame.ring2;
       if (c2 && frame.splitDir) {
         if (frame.splitDir === "tb") {
-          ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI, 2 * Math.PI); ctx.strokeStyle = c1; ctx.stroke();
-          ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI); ctx.strokeStyle = c2; ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, Math.PI, 2 * Math.PI);
+          ctx.strokeStyle = c1;
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI);
+          ctx.strokeStyle = c2;
+          ctx.stroke();
         } else {
-          ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI / 2, 3 * Math.PI / 2); ctx.strokeStyle = c1; ctx.stroke();
-          ctx.beginPath(); ctx.arc(cx, cy, r, -Math.PI / 2, Math.PI / 2); ctx.strokeStyle = c2; ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, Math.PI / 2, (3 * Math.PI) / 2);
+          ctx.strokeStyle = c1;
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, -Math.PI / 2, Math.PI / 2);
+          ctx.strokeStyle = c2;
+          ctx.stroke();
         }
       } else {
         ctx.beginPath();
@@ -1401,14 +1665,30 @@ function FrameThumb({ frame, size, color1, color2 }: {
       }
     }
 
-    if (frame.emblem) {
-      ctx.font = `bold ${size * 0.3}px sans-serif`;
-      ctx.fillStyle = frame.ring;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(frame.emblem, cx, cy);
+    {
+      const typeName = frame.id.startsWith("pk-") ? frame.id.slice(3) : null;
+      const typePath = typeName ? POKEMON_TYPE_PATHS[typeName] : null;
+      if (frame.emblem || typePath) {
+        if (typePath) {
+          drawTypeIcon(ctx, typePath, cx, cy, size * 0.3, frame.ring);
+        } else {
+          ctx.font = `bold ${size * 0.3}px sans-serif`;
+          ctx.fillStyle = frame.ring;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(frame.emblem, cx, cy);
+        }
+      }
     }
   }, [frame, size, color1, color2]);
 
-  return <canvas ref={canvasRef} width={size} height={size} className="rounded-full mx-auto" style={{ width: size, height: size }} />;
+  return (
+    <canvas
+      ref={canvasRef}
+      width={size}
+      height={size}
+      className="rounded-full mx-auto"
+      style={{ width: size, height: size }}
+    />
+  );
 }
