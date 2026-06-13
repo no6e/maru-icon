@@ -952,9 +952,11 @@ export default function IconMaker() {
   const drawPreview = useCallback(() => {
     const canvas = previewRef.current;
     if (!canvas) return;
-    const size = canvas.width;
+    const dpr = window.devicePixelRatio || 1;
+    const size = Math.round(canvas.width / dpr);
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, size, size);
 
     const f = getFrame(selectedFrameId);
@@ -971,7 +973,7 @@ export default function IconMaker() {
     ctx.fillRect(0, 0, size, size);
     if (photoRef.current) {
       const scale = zoom / 100;
-      const imgW = innerR * 2 * scale;
+      const imgW = size * scale;
       const imgH =
         (photoRef.current.naturalHeight / photoRef.current.naturalWidth) * imgW;
       const filterCss = FILTERS.find((fi) => fi.id === filterId)?.css ?? "";
@@ -1032,15 +1034,17 @@ export default function IconMaker() {
     const canvas = previewRef.current;
     if (!canvas) return;
     const ro = new ResizeObserver(() => {
+      const dpr = window.devicePixelRatio || 1;
       const size = canvas.offsetWidth;
-      canvas.width = size;
-      canvas.height = size;
+      canvas.width = size * dpr;
+      canvas.height = size * dpr;
       drawPreview();
     });
     ro.observe(canvas);
+    const dpr = window.devicePixelRatio || 1;
     const size = canvas.offsetWidth || 280;
-    canvas.width = size;
-    canvas.height = size;
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
     drawPreview();
     return () => ro.disconnect();
   }, [drawPreview]);
@@ -1114,8 +1118,9 @@ export default function IconMaker() {
       ctx.fillRect(0, 0, SIZE, SIZE);
       if (photoRef.current) {
         const scale = zoom / 100;
-        const ratio = previewRef.current ? previewRef.current.width / SIZE : 1;
-        const imgW = innerR * 2 * scale;
+        const dpr = window.devicePixelRatio || 1;
+        const ratio = previewRef.current ? previewRef.current.width / dpr / SIZE : 1;
+        const imgW = SIZE * scale;
         const imgH =
           (photoRef.current.naturalHeight / photoRef.current.naturalWidth) *
           imgW;
