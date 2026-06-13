@@ -713,11 +713,235 @@ function createPatternCanvas(name: string): HTMLCanvasElement | null {
       ctx.globalAlpha = 1;
       break;
     }
+    case "soccer-ball": {
+      c.width = 24;
+      c.height = 24;
+      ctx.fillStyle = "#2d7a2d";
+      ctx.fillRect(0, 0, 24, 24);
+      ctx.beginPath();
+      ctx.arc(12, 12, 8, 0, Math.PI * 2);
+      ctx.fillStyle = "#f5f5f5";
+      ctx.fill();
+      ctx.strokeStyle = "#333";
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+      ctx.beginPath();
+      for (let k = 0; k < 5; k++) {
+        const a = (2 * Math.PI * k / 5) - Math.PI / 2;
+        if (k === 0) ctx.moveTo(12 + 3 * Math.cos(a), 12 + 3 * Math.sin(a));
+        else ctx.lineTo(12 + 3 * Math.cos(a), 12 + 3 * Math.sin(a));
+      }
+      ctx.closePath();
+      ctx.fillStyle = "#555";
+      ctx.fill();
+      break;
+    }
+    case "baseball-ball": {
+      c.width = 24; c.height = 24;
+      ctx.fillStyle = "#f8f8f8";
+      ctx.fillRect(0, 0, 24, 24);
+      ctx.beginPath();
+      ctx.arc(12, 12, 10, 0, Math.PI * 2);
+      ctx.fillStyle = "#f8f8f8";
+      ctx.fill();
+      ctx.strokeStyle = "#555"; ctx.lineWidth = 0.6; ctx.stroke();
+      ctx.strokeStyle = "#CC2222"; ctx.lineWidth = 0.9;
+      ctx.beginPath();
+      ctx.moveTo(11, 2.5);
+      ctx.bezierCurveTo(6.5, 7.5, 6.5, 16.5, 11, 21.5);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(13, 2.5);
+      ctx.bezierCurveTo(17.5, 7.5, 17.5, 16.5, 13, 21.5);
+      ctx.stroke();
+      break;
+    }
     default:
       return null;
   }
   patternTileCache.set(name, c);
   return c;
+}
+
+function drawBaseballBall(
+  ctx: CanvasRenderingContext2D,
+  bx: number,
+  by: number,
+  br: number
+) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(bx, by, br, 0, Math.PI * 2);
+  ctx.clip();
+
+  // White base
+  ctx.fillStyle = "#f8f8f8";
+  ctx.fill();
+
+  const seamColor = "#CC2222";
+  const nStitch   = 11;
+  const tickLen   = br * 0.17;   // length of each barb
+  const seamLW    = Math.max(0.9, br * 0.075);
+  const tickLW    = Math.max(0.7, br * 0.06);
+  ctx.lineCap = "round";
+
+  // Bezier helpers
+  const bezierPt = (t: number, p: number[][]): [number, number] => {
+    const u = 1 - t;
+    return [
+      u*u*u*p[0][0] + 3*u*u*t*p[1][0] + 3*u*t*t*p[2][0] + t*t*t*p[3][0],
+      u*u*u*p[0][1] + 3*u*u*t*p[1][1] + 3*u*t*t*p[2][1] + t*t*t*p[3][1],
+    ];
+  };
+  const bezierTan = (t: number, p: number[][]): [number, number] => {
+    const u = 1 - t;
+    return [
+      3*u*u*(p[1][0]-p[0][0]) + 6*u*t*(p[2][0]-p[1][0]) + 3*t*t*(p[3][0]-p[2][0]),
+      3*u*u*(p[1][1]-p[0][1]) + 6*u*t*(p[2][1]-p[1][1]) + 3*t*t*(p[3][1]-p[2][1]),
+    ];
+  };
+
+  // Continuous seam curve + fishbone barbs on both sides
+  const drawSeam = (pts: number[][]) => {
+    // central seam line
+    ctx.strokeStyle = seamColor;
+    ctx.lineWidth = seamLW;
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    ctx.bezierCurveTo(pts[1][0], pts[1][1], pts[2][0], pts[2][1], pts[3][0], pts[3][1]);
+    ctx.stroke();
+    // barbs
+    ctx.lineWidth = tickLW;
+    for (let i = 0; i < nStitch; i++) {
+      const t  = (i + 0.5) / nStitch;
+      const [px, py] = bezierPt(t, pts);
+      let [tx, ty] = bezierTan(t, pts);
+      const tLen = Math.sqrt(tx*tx + ty*ty) || 1;
+      tx /= tLen; ty /= tLen;
+      const nx = -ty, ny = tx; // unit normal
+      // barb dir = normal tilted toward tangent (feather angle)
+      const tilt = -0.6;
+      let bx1 = nx + tx * tilt, by1 = ny + ty * tilt;   // one side
+      let bx2 = -nx + tx * tilt, by2 = -ny + ty * tilt; // other side
+      const l1 = Math.sqrt(bx1*bx1 + by1*by1) || 1;
+      const l2 = Math.sqrt(bx2*bx2 + by2*by2) || 1;
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      ctx.lineTo(px + (bx1/l1) * tickLen, py + (by1/l1) * tickLen);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      ctx.lineTo(px + (bx2/l2) * tickLen, py + (by2/l2) * tickLen);
+      ctx.stroke();
+    }
+  };
+
+  // Left seam: wide at top/bottom (near ball edge), curving inward toward center
+  drawSeam([
+    [bx - br*0.52, by - br*0.90],
+    [bx - br*0.20, by - br*0.30],
+    [bx - br*0.20, by + br*0.30],
+    [bx - br*0.52, by + br*0.90],
+  ]);
+  // Right seam: mirror
+  drawSeam([
+    [bx + br*0.52, by - br*0.90],
+    [bx + br*0.20, by - br*0.30],
+    [bx + br*0.20, by + br*0.30],
+    [bx + br*0.52, by + br*0.90],
+  ]);
+
+  ctx.restore();
+
+  // Ball outline
+  ctx.beginPath();
+  ctx.arc(bx, by, br, 0, Math.PI * 2);
+  ctx.strokeStyle = "#555";
+  ctx.lineWidth = Math.max(0.8, br * 0.05);
+  ctx.stroke();
+}
+
+function drawSoccerBall(
+  ctx: CanvasRenderingContext2D,
+  bx: number,
+  by: number,
+  br: number
+) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(bx, by, br, 0, Math.PI * 2);
+  ctx.clip();
+
+  const lw = Math.max(0.8, br * 0.045);
+
+  // White base
+  ctx.fillStyle = "#f5f5f5";
+  ctx.fillRect(bx - br, by - br, br * 2, br * 2);
+
+  // Soccer ball geometry (truncated icosahedron front view)
+  const rp = br * 0.28;                        // center pentagon circumradius
+  const s  = 2 * rp * Math.sin(Math.PI / 5);  // edge length
+  const pa = rp * Math.cos(Math.PI / 5);       // pentagon apothem
+  const ha = s * Math.sqrt(3) / 2;             // hexagon apothem
+  const hexCR   = pa + ha;                     // hex center radius ≈ 0.51 br
+  const outerCR = 1.04 * br;                   // outer pentagon center (beyond ball edge)
+
+  const drawPoly = (pts: [number, number][], fill: string) => {
+    ctx.beginPath();
+    pts.forEach(([x, y], i) => (i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)));
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.strokeStyle = "#ccc";
+    ctx.lineWidth = lw;
+    ctx.stroke();
+  };
+
+  // 5 white hexagons (inner-right vertex at hexA + 5π/6 aligns with pentagon vertices)
+  for (let k = 0; k < 5; k++) {
+    const hexA = (k + 0.5) * (2 * Math.PI / 5) - Math.PI / 2;
+    const hcx = bx + hexCR * Math.cos(hexA);
+    const hcy = by + hexCR * Math.sin(hexA);
+    drawPoly(
+      Array.from({ length: 6 }, (_, j): [number, number] => {
+        const a = hexA + (5 * Math.PI) / 6 + j * (Math.PI / 3);
+        return [hcx + s * Math.cos(a), hcy + s * Math.sin(a)];
+      }),
+      "#f5f5f5"
+    );
+  }
+
+  // 5 outer black pentagons (clipped by ball circle)
+  for (let k = 0; k < 5; k++) {
+    const hexA = (k + 0.5) * (2 * Math.PI / 5) - Math.PI / 2;
+    const opcx = bx + outerCR * Math.cos(hexA);
+    const opcy = by + outerCR * Math.sin(hexA);
+    drawPoly(
+      Array.from({ length: 5 }, (_, j): [number, number] => {
+        const a = hexA + Math.PI + j * (2 * Math.PI / 5);
+        return [opcx + rp * Math.cos(a), opcy + rp * Math.sin(a)];
+      }),
+      "#555"
+    );
+  }
+
+  // Center pentagon (black, on top)
+  drawPoly(
+    Array.from({ length: 5 }, (_, k): [number, number] => {
+      const a = k * (2 * Math.PI / 5) - Math.PI / 2;
+      return [bx + rp * Math.cos(a), by + rp * Math.sin(a)];
+    }),
+    "#555"
+  );
+
+  ctx.restore();
+
+  // Ball outline
+  ctx.beginPath();
+  ctx.arc(bx, by, br, 0, Math.PI * 2);
+  ctx.strokeStyle = "#555";
+  ctx.lineWidth = Math.max(1, br * 0.055);
+  ctx.stroke();
 }
 
 function drawRing(
@@ -845,6 +1069,49 @@ function drawRing(
       }
     }
 
+    return;
+  }
+
+  if (f.render?.kind === "pattern" && f.render.name === "soccer-ball") {
+    const ro = r + ringW / 2;
+    const ri = r - ringW / 2;
+
+    // Green base ring
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, ro, 0, Math.PI * 2, false);
+    ctx.arc(cx, cy, ri, 0, Math.PI * 2, true);
+    ctx.fillStyle = "#2d7a2d";
+    ctx.fill("evenodd");
+    ctx.restore();
+
+    // Soccer balls arranged around the ring
+    const br = ringW * 0.42;
+    const nBalls = Math.round((2 * Math.PI * r) / (br * 2.3));
+    for (let i = 0; i < nBalls; i++) {
+      const ang = (2 * Math.PI * i) / nBalls - Math.PI / 2;
+      drawSoccerBall(ctx, cx + r * Math.cos(ang), cy + r * Math.sin(ang), br);
+    }
+
+    return;
+  }
+
+  if (f.render?.kind === "pattern" && f.render.name === "baseball-ball") {
+    const ro = r + ringW / 2;
+    const ri = r - ringW / 2;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, ro, 0, Math.PI * 2, false);
+    ctx.arc(cx, cy, ri, 0, Math.PI * 2, true);
+    ctx.fillStyle = "#C8A87A";
+    ctx.fill("evenodd");
+    ctx.restore();
+    const br = ringW * 0.42;
+    const nBalls = Math.round((2 * Math.PI * r) / (br * 2.3));
+    for (let i = 0; i < nBalls; i++) {
+      const ang = (2 * Math.PI * i) / nBalls - Math.PI / 2;
+      drawBaseballBall(ctx, cx + r * Math.cos(ang), cy + r * Math.sin(ang), br);
+    }
     return;
   }
 
@@ -1749,7 +2016,44 @@ function FrameThumb({
       return;
     }
 
-    if (frame.render?.kind === "pattern") {
+    if (frame.render?.kind === "pattern" && frame.render.name === "soccer-ball") {
+      const ro = r + lw / 2;
+      const ri = r - lw / 2;
+      // Green ring base
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, ro, 0, Math.PI * 2, false);
+      ctx.arc(cx, cy, ri, 0, Math.PI * 2, true);
+      ctx.fillStyle = "#2d7a2d";
+      ctx.fill("evenodd");
+      ctx.restore();
+      // Balls on ring
+      const br = lw * 0.42;
+      const nBalls = Math.round((2 * Math.PI * r) / (br * 2.3));
+      for (let i = 0; i < nBalls; i++) {
+        const ang = (2 * Math.PI * i) / nBalls - Math.PI / 2;
+        drawSoccerBall(ctx, cx + r * Math.cos(ang), cy + r * Math.sin(ang), br);
+      }
+      // Center ball
+      drawSoccerBall(ctx, cx, cy, ri * 0.58);
+    } else if (frame.render?.kind === "pattern" && frame.render.name === "baseball-ball") {
+      const ro = r + lw / 2;
+      const ri = r - lw / 2;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, ro, 0, Math.PI * 2, false);
+      ctx.arc(cx, cy, ri, 0, Math.PI * 2, true);
+      ctx.fillStyle = "#C8A87A";
+      ctx.fill("evenodd");
+      ctx.restore();
+      const br = lw * 0.42;
+      const nBalls = Math.round((2 * Math.PI * r) / (br * 2.3));
+      for (let i = 0; i < nBalls; i++) {
+        const ang = (2 * Math.PI * i) / nBalls - Math.PI / 2;
+        drawBaseballBall(ctx, cx + r * Math.cos(ang), cy + r * Math.sin(ang), br);
+      }
+      drawBaseballBall(ctx, cx, cy, ri * 0.58);
+    } else if (frame.render?.kind === "pattern") {
       const tile = createPatternCanvas(frame.render.name);
       if (tile) {
         const ro = r + lw / 2;
