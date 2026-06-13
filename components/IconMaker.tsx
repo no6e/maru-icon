@@ -840,6 +840,20 @@ function createPatternCanvas(name: string): HTMLCanvasElement | null {
       }
       break;
     }
+    case "golf-ball": {
+      c.width = 24; c.height = 24;
+      ctx.fillStyle = "#4A8C2A";
+      ctx.fillRect(0, 0, 24, 24);
+      ctx.beginPath();
+      ctx.arc(12, 12, 9, 0, Math.PI * 2);
+      ctx.fillStyle = "#FDFDFD"; ctx.fill();
+      ctx.strokeStyle = "#b8bdc2"; ctx.lineWidth = 0.5; ctx.stroke();
+      ctx.fillStyle = "rgba(150,158,165,0.4)";
+      for (const [dx, dy] of [[12,8],[9,11],[15,11],[12,14],[8,15],[16,15],[12,11]] as const) {
+        ctx.beginPath(); ctx.arc(dx, dy, 1.1, 0, Math.PI * 2); ctx.fill();
+      }
+      break;
+    }
     default:
       return null;
   }
@@ -1010,6 +1024,57 @@ function drawBasketballBall(
   ctx.arc(bx, by, br, 0, Math.PI * 2);
   ctx.strokeStyle = "#7A4521";
   ctx.lineWidth = Math.max(0.8, br * 0.045);
+  ctx.stroke();
+}
+
+function drawGolfBall(
+  ctx: CanvasRenderingContext2D,
+  bx: number,
+  by: number,
+  br: number
+) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(bx, by, br, 0, Math.PI * 2);
+  ctx.clip();
+
+  // White base with soft shading
+  ctx.fillStyle = "#FDFDFD";
+  ctx.fill();
+  const g = ctx.createRadialGradient(
+    bx - br * 0.3, by - br * 0.3, br * 0.1,
+    bx, by, br * 1.1
+  );
+  g.addColorStop(0, "rgba(255,255,255,0.9)");
+  g.addColorStop(1, "rgba(180,185,190,0.45)");
+  ctx.fillStyle = g;
+  ctx.fill();
+
+  // Dimples in a hexagonal grid
+  const dr = br * 0.13;          // dimple radius
+  const step = br * 0.34;        // grid spacing
+  const rowH = step * 0.87;
+  ctx.fillStyle = "rgba(150,158,165,0.35)";
+  for (let row = -4; row <= 4; row++) {
+    const y = by + row * rowH;
+    const offset = (row % 2 === 0 ? 0 : step / 2);
+    for (let col = -4; col <= 4; col++) {
+      const x = bx + col * step + offset;
+      const dx = x - bx, dy = y - by;
+      if (dx * dx + dy * dy > (br - dr) * (br - dr)) continue;
+      ctx.beginPath();
+      ctx.arc(x, y, dr, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  ctx.restore();
+
+  // Ball outline
+  ctx.beginPath();
+  ctx.arc(bx, by, br, 0, Math.PI * 2);
+  ctx.strokeStyle = "#b8bdc2";
+  ctx.lineWidth = Math.max(0.6, br * 0.035);
   ctx.stroke();
 }
 
@@ -1588,6 +1653,25 @@ function drawRing(
     for (let i = 0; i < nBalls; i++) {
       const ang = (2 * Math.PI * i) / nBalls - Math.PI / 2;
       drawVolleyBall(ctx, cx + r * Math.cos(ang), cy + r * Math.sin(ang), br);
+    }
+    return;
+  }
+
+  if (f.render?.kind === "pattern" && f.render.name === "golf-ball") {
+    const ro = r + ringW / 2;
+    const ri = r - ringW / 2;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, ro, 0, Math.PI * 2, false);
+    ctx.arc(cx, cy, ri, 0, Math.PI * 2, true);
+    ctx.fillStyle = "#4A8C2A";
+    ctx.fill("evenodd");
+    ctx.restore();
+    const br = ringW * 0.42;
+    const nBalls = Math.round((2 * Math.PI * r) / (br * 2.3));
+    for (let i = 0; i < nBalls; i++) {
+      const ang = (2 * Math.PI * i) / nBalls - Math.PI / 2;
+      drawGolfBall(ctx, cx + r * Math.cos(ang), cy + r * Math.sin(ang), br);
     }
     return;
   }
@@ -2615,6 +2699,23 @@ function FrameThumb({
         drawVolleyBall(ctx, cx + r * Math.cos(ang), cy + r * Math.sin(ang), br);
       }
       drawVolleyBall(ctx, cx, cy, ri * 0.58);
+    } else if (frame.render?.kind === "pattern" && frame.render.name === "golf-ball") {
+      const ro = r + lw / 2;
+      const ri = r - lw / 2;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, ro, 0, Math.PI * 2, false);
+      ctx.arc(cx, cy, ri, 0, Math.PI * 2, true);
+      ctx.fillStyle = "#4A8C2A";
+      ctx.fill("evenodd");
+      ctx.restore();
+      const br = lw * 0.42;
+      const nBalls = Math.round((2 * Math.PI * r) / (br * 2.3));
+      for (let i = 0; i < nBalls; i++) {
+        const ang = (2 * Math.PI * i) / nBalls - Math.PI / 2;
+        drawGolfBall(ctx, cx + r * Math.cos(ang), cy + r * Math.sin(ang), br);
+      }
+      drawGolfBall(ctx, cx, cy, ri * 0.58);
     } else if (frame.render?.kind === "pattern") {
       const tile = createPatternCanvas(frame.render.name);
       if (tile) {

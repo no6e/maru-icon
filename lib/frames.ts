@@ -1,7 +1,7 @@
 export type FrameRender =
   | { kind: "conic"; stops: [number, string][] }
   | { kind: "segments"; colors: string[]; n: number }
-  | { kind: "pattern"; name: "wood" | "brick" | "tile" | "concrete" | "alum" | "iron" | "tire" | "glitter-pink" | "glitter-gold" | "glitter-silver" | "glitter-holo" | "soccer-ball" | "baseball-ball" | "basketball-ball" | "tennis-ball" | "swim-goggles" | "start-block" | "volley-ball" };
+  | { kind: "pattern"; name: "wood" | "brick" | "tile" | "concrete" | "alum" | "iron" | "tire" | "glitter-pink" | "glitter-gold" | "glitter-silver" | "glitter-holo" | "soccer-ball" | "baseball-ball" | "basketball-ball" | "tennis-ball" | "swim-goggles" | "start-block" | "volley-ball" | "golf-ball" };
 
 export type Frame = {
   id: string;
@@ -150,7 +150,7 @@ export const FRAMES: Frame[] = [
   { id: "sp-swimming",   name: "水泳",     category: "sports", ring: "#0077BE", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "swim-goggles" } },
   { id: "sp-athletics",  name: "陸上",     category: "sports", ring: "#D05A10", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "start-block" } },
   { id: "sp-volleyball", name: "バレー",   category: "sports", ring: "#5B82AD", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "volley-ball" } },
-  { id: "sp-golf",       name: "ゴルフ",   category: "sports", ring: "#4A8C2A", emblem: "⛳", emblemBg: "#2A6A0A" },
+  { id: "sp-golf",       name: "ゴルフ",   category: "sports", ring: "#4A8C2A", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "golf-ball" } },
   // glitter (texture に統合)
   { id: "gt-pink",   name: "ラメピンク",     category: "texture", ring: "#FF69B4", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "glitter-pink" } },
   { id: "gt-gold",   name: "ラメゴールド",   category: "texture", ring: "#FFD700", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "glitter-gold" } },
