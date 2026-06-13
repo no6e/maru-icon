@@ -99,11 +99,11 @@ export const FRAMES: Frame[] = [
 ];
 
 export const CATEGORIES = [
-  { id: "all",     label: "すべて" },
-  { id: "simple",  label: "シンプル" },
-  { id: "season",  label: "季節" },
-  { id: "cute",    label: "かわいい" },
+  { id: "all",      label: "すべて" },
+  { id: "simple",   label: "シンプル" },
   { id: "gradient", label: "グラデ" },
+  { id: "season",   label: "季節" },
+  { id: "cute",     label: "かわいい" },
   { id: "texture",  label: "テクスチャ" },
 ] as const;
 
