@@ -574,7 +574,7 @@ function drawRing(
 
 export default function IconMaker() {
   const [selectedFrameId, setSelectedFrameId] = useState("hero-red");
-  const [category, setCategory] = useState("all");
+  const [category, setCategory] = useState("simple");
   const [bgColor, setBgColor] = useState("#ffffff");
   const [zoom, setZoom] = useState(100);
   const [offsetX, setOffsetX] = useState(0);
