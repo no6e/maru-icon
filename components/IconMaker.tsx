@@ -1041,7 +1041,7 @@ export default function IconMaker() {
                 className="flex-shrink-0 px-2 py-1 text-xs font-bold border border-gray-200 rounded-lg hover:border-red-400 text-gray-500 transition-colors"
               >↺</button>
             </div>
-            <p className="text-center text-xs text-gray-400">写真をドラッグして位置を調整</p>
+            <p className="text-center text-xs text-gray-400">スライダーでズーム・プレビューをドラッグで移動</p>
           </div>
           {/* フィルター */}
           <div className="px-5 pb-3 border-t border-gray-100 pt-3">
