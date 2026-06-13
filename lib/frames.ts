@@ -24,8 +24,6 @@ export const FRAMES: Frame[] = [
   { id: "simple-pink",  name: "ピンク",          category: "simple",  ring: "#f9a8d4", emblem: "", emblemBg: "transparent" },
   { id: "simple-blue",  name: "ブルー",          category: "simple",  ring: "#60a5fa", emblem: "", emblemBg: "transparent" },
   { id: "simple-mint",  name: "ミント",          category: "simple",  ring: "#34d399", emblem: "", emblemBg: "transparent" },
-  { id: "split-lr",     name: "２色（左右）",    category: "simple",  ring: "#E4000F", ring2: "#1a1a1a", splitDir: "lr", emblem: "", emblemBg: "transparent" },
-  { id: "split-tb",     name: "２色（上下）",    category: "simple",  ring: "#E4000F", ring2: "#1a1a1a", splitDir: "tb", emblem: "", emblemBg: "transparent" },
   // pastel
   { id: "pastel-sky",   name: "パステルブルー",  category: "simple",  ring: "#bfdbfe", emblem: "", emblemBg: "transparent" },
   { id: "pastel-lav",   name: "ラベンダー",      category: "simple",  ring: "#ddd6fe", emblem: "", emblemBg: "transparent" },
@@ -33,6 +31,8 @@ export const FRAMES: Frame[] = [
   { id: "pastel-blush", name: "ブラッシュ",      category: "simple",  ring: "#fbcfe8", emblem: "", emblemBg: "transparent" },
   { id: "pastel-mint",  name: "パステルミント",  category: "simple",  ring: "#bbf7d0", emblem: "", emblemBg: "transparent" },
   { id: "pastel-peach", name: "ピーチ",          category: "simple",  ring: "#fed7aa", emblem: "", emblemBg: "transparent" },
+  { id: "split-lr",     name: "２色（左右）",    category: "simple",  ring: "#E4000F", ring2: "#1a1a1a", splitDir: "lr", emblem: "", emblemBg: "transparent" },
+  { id: "split-tb",     name: "２色（上下）",    category: "simple",  ring: "#E4000F", ring2: "#1a1a1a", splitDir: "tb", emblem: "", emblemBg: "transparent" },
   // season
   { id: "spring",       name: "春（桜）",        category: "season",  ring: "#fda4af", emblem: "🌸", emblemBg: "#fda4af" },
   { id: "summer",       name: "夏（海）",        category: "season",  ring: "#38bdf8", emblem: "🌊", emblemBg: "#0369a1" },
