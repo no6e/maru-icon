@@ -396,25 +396,25 @@ function createPatternCanvas(name: string): HTMLCanvasElement | null {
       let prng = 0xD3A9B7C1;
       const rng = () => { prng ^= prng << 13; prng ^= prng >>> 17; prng ^= prng << 5; return (prng >>> 0) / 0x100000000; };
       const GW = 12, GH = 12;
-      const g = new Float32Array(GW * GH);
-      for (let i = 0; i < g.length; i++) g[i] = rng();
-      const noise = (nx: number, ny: number) => {
-        const ix = ((Math.floor(nx) % GW) + GW) % GW, iy = ((Math.floor(ny) % GH) + GH) % GH;
-        const fx = nx - Math.floor(nx), fy = ny - Math.floor(ny);
+      const g1 = new Float32Array(GW*GH), g2 = new Float32Array(GW*GH), g3 = new Float32Array(GW*GH);
+      for (let i = 0; i < GW*GH; i++) { g1[i] = rng()*2-1; g2[i] = rng()*2-1; g3[i] = rng()*2-1; }
+      const noiseAt = (g: Float32Array, nx: number, ny: number) => {
+        const ix = ((Math.floor(nx)%GW)+GW)%GW, iy = ((Math.floor(ny)%GH)+GH)%GH;
+        const fx = nx-Math.floor(nx), fy = ny-Math.floor(ny);
         const ux = fx*fx*(3-2*fx), uy = fy*fy*(3-2*fy);
-        const s = g[iy*GW+ix], t = g[iy*GW+(ix+1)%GW], u = g[((iy+1)%GH)*GW+ix], v = g[((iy+1)%GH)*GW+(ix+1)%GW];
-        return s*(1-ux)*(1-uy) + t*ux*(1-uy) + u*(1-ux)*uy + v*ux*uy;
+        return g[iy*GW+ix]*(1-ux)*(1-uy) + g[iy*GW+(ix+1)%GW]*ux*(1-uy) + g[((iy+1)%GH)*GW+ix]*(1-ux)*uy + g[((iy+1)%GH)*GW+(ix+1)%GW]*ux*uy;
       };
       const img = ctx.createImageData(TW, TH);
       for (let y = 0; y < TH; y++) {
         for (let x = 0; x < TW; x++) {
-          const wobble = (noise(x/28, y/28) - 0.5) * 24;
-          const t = ((x - TW/2) * 0.7 + (y - TH/2) + wobble) / 14;
-          const dark = Math.floor(t) % 2 === 0;
+          const disp = noiseAt(g1,x/55,y/55)*48 + noiseAt(g2,x/28+4,y/28+4)*22 + noiseAt(g3,x/14+9,y/14+2)*9;
+          const wn = noiseAt(g1, x/70+6, y/70+6);
+          const frac = (((y*0.85 + x*0.22 + disp) / 22) % 1 + 1) % 1;
+          const dark = frac < 0.40 + wn * 0.13;
           const ni = y*TW+x;
-          img.data[ni*4]   = dark ? 18 : 242;
-          img.data[ni*4+1] = dark ? 18 : 242;
-          img.data[ni*4+2] = dark ? 18 : 242;
+          img.data[ni*4]   = dark ? 220 : 255;
+          img.data[ni*4+1] = dark ? 0   : 255;
+          img.data[ni*4+2] = dark ? 88  : 255;
           img.data[ni*4+3] = 255;
         }
       }

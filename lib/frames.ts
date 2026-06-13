@@ -153,7 +153,7 @@ export const FRAMES: Frame[] = [
   { id: "sp-volleyball", name: "バレー",   category: "sports", ring: "#1560BD", emblem: "🏐", emblemBg: "#0A3A8A" },
   { id: "sp-golf",       name: "ゴルフ",   category: "sports", ring: "#4A8C2A", emblem: "⛳", emblemBg: "#2A6A0A" },
   // gal
-  { id: "gl-zebra",   name: "ゼブラ",   category: "gal", ring: "#2a2a2a", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "zebra" } },
+  { id: "gl-zebra",   name: "ゼブラ",   category: "gal", ring: "#DC0058", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "zebra" } },
   { id: "gl-stripe",  name: "ボーダー", category: "gal", ring: "#ff69b4", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "stripe" } },
   { id: "gl-cow",     name: "ウシ柄",   category: "gal", ring: "#2a2a2a", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "cow" } },
   { id: "gl-leopard", name: "ヒョウ柄", category: "gal", ring: "#C8A060", emblem: "", emblemBg: "transparent", render: { kind: "pattern", name: "leopard" } },
