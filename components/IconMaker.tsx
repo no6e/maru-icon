@@ -788,6 +788,18 @@ function createPatternCanvas(name: string): HTMLCanvasElement | null {
       ctx.moveTo(17, 3); ctx.bezierCurveTo(13.5, 8, 13.5, 16, 17, 21); ctx.stroke();
       break;
     }
+    case "swim-goggles": {
+      c.width = 24; c.height = 24;
+      ctx.fillStyle = "#0077BE";
+      ctx.fillRect(0, 0, 24, 24);
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "#EAF6FF"; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.moveTo(10, 12); ctx.lineTo(14, 12); ctx.stroke();
+      ctx.fillStyle = "#9FE4F5"; ctx.strokeStyle = "#EAF6FF"; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.arc(8, 12, 3.2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(16, 12, 3.2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      break;
+    }
     default:
       return null;
   }
@@ -959,6 +971,72 @@ function drawBasketballBall(
   ctx.strokeStyle = "#7A4521";
   ctx.lineWidth = Math.max(0.8, br * 0.045);
   ctx.stroke();
+}
+
+function drawSwimGoggles(
+  ctx: CanvasRenderingContext2D,
+  bx: number,
+  by: number,
+  br: number
+) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(bx, by, br, 0, Math.PI * 2);
+  ctx.clip();
+
+  // Blue base
+  ctx.fillStyle = "#0077BE";
+  ctx.fill();
+
+  const lensR   = br * 0.40;
+  const lensSep = br * 0.44;
+  const lx = bx - lensSep, rx = bx + lensSep;
+  const frameLW = Math.max(1, br * 0.13);
+  const strapLW = Math.max(1, br * 0.12);
+  ctx.lineCap = "round";
+
+  // Strap arcs (behind lenses), going outward to ball edge
+  ctx.strokeStyle = "#163A52";
+  ctx.lineWidth = strapLW;
+  ctx.beginPath();
+  ctx.moveTo(lx - lensR * 0.7, by - lensR * 0.3);
+  ctx.quadraticCurveTo(bx - br * 1.0, by - br * 0.55, bx - br * 1.05, by - br * 0.1);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(rx + lensR * 0.7, by - lensR * 0.3);
+  ctx.quadraticCurveTo(bx + br * 1.0, by - br * 0.55, bx + br * 1.05, by - br * 0.1);
+  ctx.stroke();
+
+  // Bridge between lenses
+  ctx.strokeStyle = "#EAF6FF";
+  ctx.lineWidth = frameLW;
+  ctx.beginPath();
+  ctx.moveTo(lx + lensR * 0.85, by);
+  ctx.lineTo(rx - lensR * 0.85, by);
+  ctx.stroke();
+
+  // Lenses
+  const drawLens = (cxL: number) => {
+    // glass
+    const g = ctx.createRadialGradient(
+      cxL - lensR * 0.3, by - lensR * 0.3, lensR * 0.1,
+      cxL, by, lensR
+    );
+    g.addColorStop(0, "#BFF0FF");
+    g.addColorStop(1, "#3FB6E0");
+    ctx.beginPath();
+    ctx.arc(cxL, by, lensR, 0, Math.PI * 2);
+    ctx.fillStyle = g;
+    ctx.fill();
+    // frame
+    ctx.strokeStyle = "#EAF6FF";
+    ctx.lineWidth = frameLW;
+    ctx.stroke();
+  };
+  drawLens(lx);
+  drawLens(rx);
+
+  ctx.restore();
 }
 
 function drawTennisBall(
@@ -1297,6 +1375,25 @@ function drawRing(
     for (let i = 0; i < nBalls; i++) {
       const ang = (2 * Math.PI * i) / nBalls - Math.PI / 2;
       drawTennisBall(ctx, cx + r * Math.cos(ang), cy + r * Math.sin(ang), br);
+    }
+    return;
+  }
+
+  if (f.render?.kind === "pattern" && f.render.name === "swim-goggles") {
+    const ro = r + ringW / 2;
+    const ri = r - ringW / 2;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, ro, 0, Math.PI * 2, false);
+    ctx.arc(cx, cy, ri, 0, Math.PI * 2, true);
+    ctx.fillStyle = "#0077BE";
+    ctx.fill("evenodd");
+    ctx.restore();
+    const br = ringW * 0.42;
+    const nBalls = Math.round((2 * Math.PI * r) / (br * 2.3));
+    for (let i = 0; i < nBalls; i++) {
+      const ang = (2 * Math.PI * i) / nBalls - Math.PI / 2;
+      drawSwimGoggles(ctx, cx + r * Math.cos(ang), cy + r * Math.sin(ang), br);
     }
     return;
   }
@@ -2273,6 +2370,23 @@ function FrameThumb({
         drawTennisBall(ctx, cx + r * Math.cos(ang), cy + r * Math.sin(ang), br);
       }
       drawTennisBall(ctx, cx, cy, ri * 0.58);
+    } else if (frame.render?.kind === "pattern" && frame.render.name === "swim-goggles") {
+      const ro = r + lw / 2;
+      const ri = r - lw / 2;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, ro, 0, Math.PI * 2, false);
+      ctx.arc(cx, cy, ri, 0, Math.PI * 2, true);
+      ctx.fillStyle = "#0077BE";
+      ctx.fill("evenodd");
+      ctx.restore();
+      const br = lw * 0.42;
+      const nBalls = Math.round((2 * Math.PI * r) / (br * 2.3));
+      for (let i = 0; i < nBalls; i++) {
+        const ang = (2 * Math.PI * i) / nBalls - Math.PI / 2;
+        drawSwimGoggles(ctx, cx + r * Math.cos(ang), cy + r * Math.sin(ang), br);
+      }
+      drawSwimGoggles(ctx, cx, cy, ri * 0.58);
     } else if (frame.render?.kind === "pattern") {
       const tile = createPatternCanvas(frame.render.name);
       if (tile) {
